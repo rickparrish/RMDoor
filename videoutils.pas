@@ -32,7 +32,7 @@ implementation
 
 {$IFDEF GO32V2}
   var
-    Screen: TScreen absolute $B800:0000;
+    Screen: TScreenBuffer absolute $B800:0000;
 {$ENDIF}
 {$IFDEF WINDOWS}
   var
@@ -254,13 +254,23 @@ end;
 {$ENDIF}
 
 {$IFDEF GO32V2}
-procedure RestoreScreen(var AScreenBuf: TScreenBuf);
+procedure RestoreScreen(var AScreenBuf: TScreenBuffer);
+var
+  X, Y: Integer;
 begin
-  Move(AScreenBuf, Screen, 4000);
+  // REETODO Fails with far pointer error Move(AScreenBuf, Screen, 4000);
+  // REETODO Don't hardcode to 80x25
+  for Y := 1 to 25 do
+  begin
+    for X := 1 to 80 do
+    begin
+      FastWrite(AScreenBuf[Y][X].Ch, X, Y, AScreenBuf[Y][X].Attr);
+    end;
+  end;
 end;
 {$ENDIF}
 {$IFDEF UNIX}
-procedure RestoreScreen(var AScreenBuf: TScreenBuf);
+procedure RestoreScreen(var AScreenBuf: TScreenBuffer);
 var
   X, Y: Integer;
 begin
@@ -296,15 +306,26 @@ end;
 
 { REETODO Should detect screen size }
 {$IFDEF GO32V2}
-procedure SaveScreen(var AScreenBuf: TScreenBuf);
+procedure SaveScreen(var AScreenBuf: TScreenBuffer);
+var
+  X, Y: Integer;
 begin
-  Move(Screen, AScreenBuf, 4000);
+  // REETODO Fails with far pointer error Move(Screen, AScreenBuf, 4000);
+  // REETODO Don't hardcode to 80x25
+  for Y := 1 to 25 do
+  begin
+    for X := 1 to 80 do
+    begin
+      AScreenBuf[Y][X].Ch := GetCharAt(X, Y);
+      AScreenBuf[Y][X].Attr := GetAttrAt(X, Y);
+    end;
+  end;
 end;
 {$ENDIF}
 {$IFDEF UNIX}
-procedure SaveScreen(var AScreenBuf: TScreenBuf);
+procedure SaveScreen(var AScreenBuf: TScreenBuffer);
 begin
-  Move(SysTVGetSrcBuf^, AScreenBuf, SizeOf(TScreenBuf));
+  Move(SysTVGetSrcBuf^, AScreenBuf, SizeOf(TScreenBuffer));
 end;
 {$ENDIF}
 {$IFDEF WINDOWS}

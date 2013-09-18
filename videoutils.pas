@@ -21,8 +21,8 @@ procedure CursorShow;
 procedure FastWrite(ALine: String; AX, AY, AAttr: Byte);
 function GetAttrAt(AX, AY: Byte): Byte;
 function GetCharAt(AX, AY: Byte): Char;
-procedure RestoreScreen(var AScreenBuf: TScreenBuffer);
-procedure SaveScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenRestore(var AScreenBuffer: TScreenBuffer);
+procedure ScreenSave(var AScreenBuffer: TScreenBuffer);
 function  ScreenSizeX: Word;
 function  ScreenSizeY: Word;
 procedure SetAttrAt(AAttr, AX, AY: Byte);
@@ -254,23 +254,23 @@ end;
 {$ENDIF}
 
 {$IFDEF GO32V2}
-procedure RestoreScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenRestore(var AScreenBuffer: TScreenBuffer);
 var
   X, Y: Integer;
 begin
-  // REETODO Fails with far pointer error Move(AScreenBuf, Screen, 4000);
+  // REETODO Fails with far pointer error Move(AScreenBuffer, Screen, 4000);
   // REETODO Don't hardcode to 80x25
   for Y := 1 to 25 do
   begin
     for X := 1 to 80 do
     begin
-      FastWrite(AScreenBuf[Y][X].Ch, X, Y, AScreenBuf[Y][X].Attr);
+      FastWrite(AScreenBuffer[Y][X].Ch, X, Y, AScreenBuffer[Y][X].Attr);
     end;
   end;
 end;
 {$ENDIF}
 {$IFDEF UNIX}
-procedure RestoreScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenRestore(var AScreenBuffer: TScreenBuffer);
 var
   X, Y: Integer;
 begin
@@ -279,13 +279,13 @@ begin
   begin
     for X := 1 to 80 do
     begin
-      SysWrtCharStrAtt(@AScreenBuf[Y][X].Ch, 1, X - 1, Y - 1, AScreenBuf[Y][X].Attr);
+      SysWrtCharStrAtt(@AScreenBuffer[Y][X].Ch, 1, X - 1, Y - 1, AScreenBuffer[Y][X].Attr);
     end;
   end;
 end;
 {$ENDIF}
 {$IFDEF WINDOWS}
-procedure RestoreScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenRestore(var AScreenBuffer: TScreenBuffer);
 var
   BufSize    : TCoord;
   WritePos   : TCoord;
@@ -300,36 +300,36 @@ begin
   DestRect.Top    := 0;
   DestRect.Right  := 79;
   DestRect.Bottom := 24;
-  WriteConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), @AScreenBuf[1][1], BufSize, WritePos, DestRect);
+  WriteConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), @AScreenBuffer[1][1], BufSize, WritePos, DestRect);
 end;
 {$ENDIF}
 
 { REETODO Should detect screen size }
 {$IFDEF GO32V2}
-procedure SaveScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenSave(var AScreenBuffer: TScreenBuffer);
 var
   X, Y: Integer;
 begin
-  // REETODO Fails with far pointer error Move(Screen, AScreenBuf, 4000);
+  // REETODO Fails with far pointer error Move(Screen, AScreenBuffer, 4000);
   // REETODO Don't hardcode to 80x25
   for Y := 1 to 25 do
   begin
     for X := 1 to 80 do
     begin
-      AScreenBuf[Y][X].Ch := GetCharAt(X, Y);
-      AScreenBuf[Y][X].Attr := GetAttrAt(X, Y);
+      AScreenBuffer[Y][X].Ch := GetCharAt(X, Y);
+      AScreenBuffer[Y][X].Attr := GetAttrAt(X, Y);
     end;
   end;
 end;
 {$ENDIF}
 {$IFDEF UNIX}
-procedure SaveScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenSave(var AScreenBuffer: TScreenBuffer);
 begin
-  Move(SysTVGetSrcBuf^, AScreenBuf, SizeOf(TScreenBuffer));
+  Move(SysTVGetSrcBuf^, AScreenBuffer, SizeOf(TScreenBuffer));
 end;
 {$ENDIF}
 {$IFDEF WINDOWS}
-procedure SaveScreen(var AScreenBuf: TScreenBuffer);
+procedure ScreenSave(var AScreenBuffer: TScreenBuffer);
 var
   BufSize    : TCoord;
   ReadPos    : TCoord;
@@ -344,7 +344,7 @@ begin
   SourceRect.Top    := 0;
   SourceRect.Right  := 79;
   SourceRect.Bottom := 24;
-  ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), @AScreenBuf[1][1], BufSize, ReadPos, SourceRect);
+  ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), @AScreenBuffer[1][1], BufSize, ReadPos, SourceRect);
 end;
 {$ENDIF}
 

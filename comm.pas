@@ -5,6 +5,9 @@ unit Comm;
 
 interface
 
+{$IFDEF GO32V2}
+  {$DEFINE COMM_FOSSIL}
+{$ENDIF}
 {$IFDEF UNIX}
   {$DEFINE COMM_SOCKET}
 {$ENDIF}
@@ -27,8 +30,11 @@ uses
 function CommCarrier: Boolean;
 function CommCharAvail: Boolean;
 procedure CommClose(ADisconnect: Boolean);
+procedure CommFlushOutBuffer;
 procedure CommOpen(ACommNumber: LongInt);
+procedure CommPurgeOutBuffer;
 function CommReadChar: Char;
+procedure CommSetBaud(ABaud: LongInt);
 procedure CommWrite(AText: String);
 
 implementation
@@ -37,7 +43,7 @@ var
   FBuffer: String = '';
   FCarrier: Boolean = true;
   FCommNumber: Integer = -1;
-  {$IFDEF GO32V2}
+  {$IFDEF COMM_FOSSIL}
     Regs: Registers;
   {$ENDIF}
 
@@ -51,7 +57,7 @@ procedure ReceiveData; forward;
 
 function CommCarrier: Boolean;
 begin
-  {$IFDEF GO32V2}
+  {$IFDEF COMM_FOSSIL}
     Regs.AH := $03;
     Regs.DX := FCommNumber;
     Intr($14, Regs);
@@ -78,7 +84,7 @@ begin
       CloseSocket(FCommNumber);
     {$ENDIF}
   {$ENDIF}
-  {$IFDEF GO32V2}
+  {$IFDEF COMM_FOSSIL}
     if (ADisconnect) then
     begin
       Regs.AH := $05;
@@ -86,6 +92,11 @@ begin
       Intr($14, Regs);
     end;
   {$ENDIF}
+end;
+
+procedure CommFlushOutBuffer;
+begin
+  // REETODO No output buffer to flush at this time
 end;
 
 procedure CommOpen(ACommNumber: LongInt);
@@ -96,7 +107,7 @@ procedure CommOpen(ACommNumber: LongInt);
 begin
   FCommNumber := ACommNumber;
 
-  {$IFDEF GO32V2}
+  {$IFDEF COMM_FOSSIL}
     FCommNumber -= 1;
 
     Regs.AH := $04;
@@ -124,6 +135,11 @@ begin
   {$ENDIF}
 end;
 
+procedure CommPurgeOutBuffer;
+begin
+  // REETODO No output buffer to purge at this time
+end;
+
 function CommReadChar: Char;
 begin
   while (Length(FBuffer) = 0) do
@@ -134,6 +150,13 @@ begin
 
   Result := FBuffer[1];
   Delete(FBuffer, 1, 1);
+end;
+
+procedure CommSetBaud(ABaud: LongInt);
+begin
+  {$IFDEF COMM_FOSSIL}
+    WriteLn('REEPORT Comm CommSetBaud'); Halt;
+  {$ENDIF}
 end;
 
 procedure CommWrite(AText: String);
@@ -160,7 +183,7 @@ begin
   {$IFDEF COMM_SOCKET}
     fpSend(FCommNumber, @Block, BlockLen, 0);
   {$ENDIF}
-  {$IFDEF GO32V2}
+  {$IFDEF COMM_FOSSIL}
     DosAlloc(Selector, Segment, BlockLen);
 
     if Int31Error <> 0 then Exit;
@@ -241,7 +264,7 @@ begin
       end;
     end;
   {$ENDIF}
-  {$IFDEF GO32V2}
+  {$IFDEF COMM_FOSSIL}
     Regs.AH := $03;
     Regs.DX := FCommNumber;
     Intr($14, Regs);

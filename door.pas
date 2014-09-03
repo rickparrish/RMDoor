@@ -217,6 +217,7 @@ end;
 }
 procedure DefaultOnUsage;
 begin
+  // TODO Only display dropfiles that the current platform supports
   ClrScr;
   WriteLn;
   WriteLn(' USAGE: ' + ExtractFileName(ParamStr(0)) + ' <PARAMETERS>');
@@ -535,20 +536,21 @@ end;
 function DoorReadKey: Char;
 var
   Ch: Char;
+  I: Integer;
 begin
   Ch := #0;
   DoorLastKey.Location := lkNone;
   repeat
     while Not(DoorKeyPressed) do Sleep(1);
 
-    // Check for local keypress
     if (KeyPressed) then
     begin
+      // Check for local keypress
       Ch := ReadKey;
       if (Ch = #0) then
       begin
         Ch := ReadKey;
-        if Not(DoorLocal) AND (Not(Assigned(DoorOnSysopKey)) OR (Not(DoorOnSysopKey(Ch)))) then
+        if (Not(Assigned(DoorOnSysopKey)) OR (Not(DoorOnSysopKey(Ch)))) then
         begin
           DoorLastKey.Extended := True;
           DoorLastKey.Location := lkLocal;
@@ -558,14 +560,81 @@ begin
         DoorLastKey.Extended := False;
         DoorLastKey.Location := lkLocal;
       end;
-    end;
-
-    // Check for remote keypress (if we didn't get a local keypress)
-    if (Ch = #0) AND Not(DoorLocal) AND (CommCharAvail) then
+    end else
+    if Not(DoorLocal) AND (CommCharAvail) then
     begin
+      // Check for remote keypress
       Ch := CommReadChar;
-      DoorLastKey.Extended := False;
-      DoorLastKey.Location := lkRemote;
+      if (Ch = #27) then
+      begin
+        // ESC, could be a special key
+
+        // Wait up to 500ms for a second key
+        for I := 1 to 10 do
+        begin
+          if Not(CommCharAvail) then Sleep(50);
+        end;
+
+        // Read the next key, if we have one
+        if (CommCharAvail) then
+        begin
+          if (CommPeekChar = '[') then
+          begin
+            // That's ESC and [ now, so we'll assume it's a special key
+            CommReadChar; // Eat the [
+
+            // Wait up to 500ms for a second key
+            for I := 1 to 10 do
+            begin
+              if Not(CommCharAvail) then Sleep(50);
+            end;
+
+            if (CommCharAvail) then
+            begin
+              Ch := CommReadChar;
+              case Ch of
+                'A': begin
+                       Ch := 'H'; // Up arrow
+                       DoorLastKey.Extended := True;
+                       DoorLastKey.Location := lkRemote;
+                     end;
+                'B': begin
+                       Ch := 'P'; // Down arrow
+                       DoorLastKey.Extended := True;
+                       DoorLastKey.Location := lkRemote;
+                     end;
+                'C': begin
+                       Ch := 'M'; // Right arrow
+                       DoorLastKey.Extended := True;
+                       DoorLastKey.Location := lkRemote;
+                     end;
+                'D': begin
+                       Ch := 'K'; // Left arrow
+                       DoorLastKey.Extended := True;
+                       DoorLastKey.Location := lkRemote;
+                     end;
+              end;
+            end else
+            begin
+              // ESC and [ with no other key, weird combo to hit manually so we'll ignore it
+            end;
+          end else
+          begin
+            // Looks like it was ESC followed by something else
+            DoorLastKey.Extended := False;
+            DoorLastKey.Location := lkRemote;
+          end;
+        end else
+        begin
+          // No next key, guess it was just an escape keypress
+          DoorLastKey.Extended := False;
+          DoorLastKey.Location := lkRemote;
+        end;
+      end else
+      begin
+        DoorLastKey.Extended := False;
+        DoorLastKey.Location := lkRemote;
+      end;
     end;
   until (DoorLastKey.Location <> lkNone);
 

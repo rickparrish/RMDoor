@@ -32,6 +32,7 @@ function CommCharAvail: Boolean;
 procedure CommClose(ADisconnect: Boolean);
 procedure CommFlushOutBuffer;
 procedure CommOpen(ACommNumber: LongInt);
+function CommPeekChar: Char;
 procedure CommPurgeOutBuffer;
 function CommReadChar: Char;
 procedure CommSetBaud(ABaud: LongInt);
@@ -133,6 +134,17 @@ begin
     CommWriteRaw(#255#251#0); // Will binary
     CommWriteRaw(#255#251#1); // Will echo
   {$ENDIF}
+end;
+
+function CommPeekChar: Char;
+begin
+  while (Length(FBuffer) = 0) do
+  begin
+    Sleep(1);
+    ReceiveData;
+  end;
+
+  Result := FBuffer[1];
 end;
 
 procedure CommPurgeOutBuffer;
@@ -274,7 +286,7 @@ begin
     begin
       DosAlloc(Selector, Segment, SizeOf(ReadArray));
 
-      if Int31Error <> 0 then EXIT;
+      if Int31Error <> 0 then Exit;
       DosMemPut(Segment, 0, ReadArray, SizeOf(ReadArray));
 
       Regs.AH := $18;

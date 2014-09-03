@@ -6,11 +6,12 @@ interface
 
 uses
   Ansi,
-  Classes, StrUtils, SysUtils;
+  Base64, Classes, StrUtils, SysUtils;
 
 type
   TTokens = Array of String;
 
+function Base64Decode(ABase64: String): String;
 function PipeToAnsi(AText: String): String;
 function SecToDHMS(ASec: LongInt): String;
 function SecToHM(ASec: LongInt): String;
@@ -22,6 +23,25 @@ function TokToStr(ATokens: TTokens; ADelim: Char): String;
 function TokToStr(ATokens: TTokens; ADelim: Char; AStartIndex: Integer): String;
 
 implementation
+
+{ From: https://sites.google.com/a/gorilla3d.com/fpc-docs/built-in-units/base64/tbase64decodingstream }
+function Base64Decode(ABase64: String): String;
+var
+  DecodedStream: TStringStream;
+  EncodedStream: TStringStream;
+  Decoder: TBase64DecodingStream;
+begin
+  EncodedStream := TStringStream.Create(ABase64);
+  DecodedStream := TStringStream.Create('');
+  Decoder       := TBase64DecodingStream.Create(EncodedStream);
+  DecodedStream.CopyFrom(Decoder, Decoder.Size);
+
+  Result := DecodedStream.DataString;
+
+  DecodedStream.Free;
+  EncodedStream.Free;
+  Decoder.Free;
+end;
 
 {
   Convert PIPE codes to ANSI escape sequences

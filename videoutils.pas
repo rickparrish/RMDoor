@@ -19,14 +19,16 @@ type
 procedure CursorHide;
 procedure CursorShow;
 procedure FastWrite(ALine: String; AX, AY, AAttr: Byte);
-function GetAttrAt(AX, AY: Byte): Byte;
-function GetCharAt(AX, AY: Byte): Char;
+function  GetAttrAt(AX, AY: Byte): Byte;
+function  GetCharAt(AX, AY: Byte): Char;
+procedure GotoXYAbs(AXY: Word);
 procedure ScreenRestore(var AScreenBuffer: TScreenBuffer);
 procedure ScreenSave(var AScreenBuffer: TScreenBuffer);
 function  ScreenSizeX: Word;
 function  ScreenSizeY: Word;
 procedure SetAttrAt(AAttr, AX, AY: Byte);
 procedure SetCharAt(ACh: Char; AX, AY: Byte);
+function  WhereXYAbs: Word;
 
 implementation
 
@@ -179,8 +181,7 @@ function GetAttrAt(AX, AY: Byte): Byte;
 var
   Attr: Word;
   Coord: TCoord;
-  {$IFDEF FPC}NumRead: Cardinal;{$ENDIF}
-  {$IFDEF VPASCAL}NumRead: Integer;{$ENDIF}
+  NumRead: Cardinal;
 begin
   { Validate parameters }
   if ((AX < 1) OR (AX > 80) OR (AY < 1) OR (AY > 25)) then
@@ -230,8 +231,7 @@ function GetCharAt(AX, AY: Byte): Char;
 var
   Ch: Char;
   Coord: TCoord;
-  {$IFDEF FPC}NumRead: Cardinal;{$ENDIF}
-  {$IFDEF VPASCAL}NumRead: Integer;{$ENDIF}
+  NumRead: Cardinal;
 begin
   { Validate parameters }
   if ((AX < 1) OR (AX > 80) OR (AY < 1) OR (AY > 25)) then
@@ -252,6 +252,12 @@ begin
   end;
 end;
 {$ENDIF}
+
+procedure GotoXYAbs(AXY: Word);
+begin
+  // REETODO This is window relative, and it should be absolute
+  GotoXY((AXY AND $00FF) + 1, ((AXY AND $FF00) SHR 8) + 1);
+end;
 
 {$IFDEF GO32V2}
 procedure ScreenRestore(var AScreenBuffer: TScreenBuffer);
@@ -279,7 +285,7 @@ begin
   begin
     for X := 1 to 80 do
     begin
-      SysWrtCharStrAtt(@AScreenBuffer[Y][X].Ch, 1, X - 1, Y - 1, AScreenBuffer[Y][X].Attr);
+      FastWrite(AScreenBuffer[Y][X].Ch, X, Y, AScreenBuffer[Y][X].Attr);
     end;
   end;
 end;
@@ -300,7 +306,7 @@ begin
   DestRect.Top    := 0;
   DestRect.Right  := 79;
   DestRect.Bottom := 24;
-  WriteConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), @AScreenBuffer[1][1], BufSize, WritePos, DestRect);
+  WriteConsoleOutput(StdOut, @AScreenBuffer, BufSize, WritePos, DestRect);
 end;
 {$ENDIF}
 
@@ -324,8 +330,18 @@ end;
 {$ENDIF}
 {$IFDEF UNIX}
 procedure ScreenSave(var AScreenBuffer: TScreenBuffer);
+var
+  X, Y: Integer;
 begin
-  Move(SysTVGetSrcBuf^, AScreenBuffer, SizeOf(TScreenBuffer));
+  // REETODO Don't hardcode to 80x25
+  for Y := 1 to 25 do
+  begin
+    for X := 1 to 80 do
+    begin
+      AScreenBuffer[Y][X].Ch := GetCharAt(X, Y);
+      AScreenBuffer[Y][X].Attr := GetAttrAt(X, Y);
+    end;
+  end;
 end;
 {$ENDIF}
 {$IFDEF WINDOWS}
@@ -344,7 +360,7 @@ begin
   SourceRect.Top    := 0;
   SourceRect.Right  := 79;
   SourceRect.Bottom := 24;
-  ReadConsoleOutput(GetStdHandle(STD_OUTPUT_HANDLE), @AScreenBuffer[1][1], BufSize, ReadPos, SourceRect);
+  ReadConsoleOutput(StdOut, @AScreenBuffer, BufSize, ReadPos, SourceRect);
 end;
 {$ENDIF}
 
@@ -357,11 +373,9 @@ end;
 {$ENDIF}
 {$IFDEF UNIX}
 function ScreenSizeX: Word;
-var
-  Size: TSysPoint;
 begin
-  SysTVGetScrMode(@Size, False);
-  ScreenSizeX := Size.X;
+  { REETODO }
+  ScreenSizeX := 80;
 end;
 {$ENDIF}
 {$IFDEF WINDOWS}
@@ -383,11 +397,9 @@ end;
 {$ENDIF}
 {$IFDEF UNIX}
 function ScreenSizeY: Word;
-var
-  Size: TSysPoint;
 begin
-  SysTVGetScrMode(@Size, False);
-  ScreenSizeY := Size.Y;
+  { REETODO }
+  ScreenSizeY := 25;
 end;
 {$ENDIF}
 {$IFDEF WINDOWS}
@@ -453,8 +465,7 @@ end;
 procedure SetAttrAt(AAttr, AX, AY: Byte);
 var
   WriteCoord: TCoord;
-  {$IFDEF FPC}NumWritten: Cardinal;{$ENDIF}
-  {$IFDEF VPASCAL}NumWritten: Integer;{$ENDIF}
+  NumWritten: Cardinal;
 begin
   { Validate parameters }
   if ((AX < 1) OR (AX > 80) OR (AY < 1) OR (AY > 25)) then Exit;
@@ -518,8 +529,7 @@ end;
 procedure SetCharAt(ACh: Char; AX, AY: Byte);
 var
   WriteCoord: TCoord;
-  {$IFDEF FPC}NumWritten: Cardinal;{$ENDIF}
-  {$IFDEF VPASCAL}NumWritten: Integer;{$ENDIF}
+  NumWritten: Cardinal;
 begin
   { Validate parameters }
   if ((AX < 1) OR (AX > 80) OR (AY < 1) OR (AY > 25)) then Exit;
@@ -529,6 +539,12 @@ begin
   WriteConsoleOutputCharacter(StdOut, @ACh, 1, WriteCoord, NumWritten);
 end;
 {$ENDIF}
+
+function WhereXYAbs: Word;
+begin
+  // REETODO This is window relative, and it should be absolute
+  WhereXYAbs := (WhereX - 1) + ((WhereY - 1) SHL 8);
+end;
 
 {
   Initialization stuff

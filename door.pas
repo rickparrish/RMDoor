@@ -555,10 +555,12 @@ begin
           'Q':
           begin
             Result := False;
-            Exit;
+            Break;
           end;
       end;
   until (Ch = #13);
+
+  DoorCursorRestore;
 end;
 
 {

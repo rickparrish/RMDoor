@@ -82,6 +82,8 @@ type
 var
   DoorDropInfo: TDoorDropInfo;
   DoorLastKey: TDoorLastKey;
+  DoorLiteBarIndex: Integer;
+  DoorLiteBarOptions: TStringList;
   DoorMOREPrompts: TDoorMOREPrompts;
   DoorProgramNameAndVersion: String;
   DoorSession: TDoorSession;
@@ -116,6 +118,7 @@ procedure DoorGotoXY(AX, AY: Byte);
 procedure DoorGotoY(AY: Byte);
 function DoorInput(ADefaultText, AAllowedCharacters: String; APasswordCharacter: Char; AVisibleLength, AMaxLength, AAttr: Byte): String;
 function DoorKeyPressed: Boolean;
+function DoorLiteBar: Boolean;
 function DoorLocal: Boolean;
 function DoorOpenComm: Boolean;
 function DoorReadKey: Char;
@@ -477,6 +480,87 @@ begin
   if Not(DoorLocal) then Result := Result OR CommCharAvail;
 end;
 
+function DoorLiteBar: Boolean;
+var
+  Ch: Char;
+  I: Integer;
+begin
+  // Assume success
+  Result := True;
+
+  // Output options
+  DoorTextAttr(15);
+  DoorCursorSave;
+  for I := 0 to DoorLiteBarOptions.Count - 1 do
+  begin
+
+    if (I > 0) then
+    begin
+      DoorCursorRestore;
+      DoorCursorDown(I);
+    end;
+
+    if (I = DoorLiteBarIndex) then DoorTextBackground(Crt.Blue);
+    DoorWrite(DoorLiteBarOptions[I]);
+    DoorTextAttr(15);
+  end;
+
+  // Get response
+  repeat
+      Ch := UpCase(DoorReadKey);
+      case Ch of
+          '8', '4', 'H', 'K':
+          begin
+            if (DoorLiteBarIndex > 0) then
+            begin
+              // Erase old highlight
+              DoorCursorRestore;
+              if (DoorLiteBarIndex > 0) then DoorCursorDown(DoorLiteBarIndex);
+              DoorWrite(DoorLiteBarOptions[DoorLiteBarIndex]);
+              DoorTextAttr(15);
+
+              // Move up
+              DoorLiteBarIndex -= 1;
+
+              // Draw new highlight
+              DoorCursorRestore;
+              if (DoorLiteBarIndex > 0) then DoorCursorDown(DoorLiteBarIndex);
+              DoorTextBackground(Crt.BLUE);
+              DoorWrite(DoorLiteBarOptions[DoorLiteBarIndex]);
+              DoorTextAttr(15);
+            end;
+          end;
+          '6', '2', 'M', 'P':
+          begin
+           if (DoorLiteBarIndex < (DoorLiteBarOptions.Count - 1)) then
+            begin
+              // Erase old highlight
+              DoorCursorRestore;
+              if (DoorLiteBarIndex > 0) then DoorCursorDown(DoorLiteBarIndex);
+              DoorWrite(DoorLiteBarOptions[DoorLiteBarIndex]);
+              DoorTextAttr(15);
+
+              // Move up
+              DoorLiteBarIndex += 1;
+
+              // Draw new highlight
+              DoorCursorRestore;
+              if (DoorLiteBarIndex > 0) then DoorCursorDown(DoorLiteBarIndex);
+              DoorTextBackground(Crt.BLUE);
+              DoorWrite(DoorLiteBarOptions[DoorLiteBarIndex]);
+              DoorTextAttr(15);
+            end;
+          end;
+
+          'Q':
+          begin
+            Result := False;
+            Exit;
+          end;
+      end;
+  until (Ch = #13);
+end;
+
 {
   Returns TRUE if the door is being run in local mode
 }
@@ -663,6 +747,7 @@ end;
 procedure DoorShutDown;
 begin
   DoorClose(false);
+  DoorLiteBarOptions.Free;
 end;
 
 {
@@ -1031,6 +1116,9 @@ begin
        Location := lkNone;
        Time := 0;
   end;
+
+  DoorLiteBarIndex := 0;
+  DoorLiteBarOptions := TStringList.Create;
 
   with DoorMOREPrompts do
   begin

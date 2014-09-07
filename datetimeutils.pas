@@ -1,4 +1,4 @@
-unit DateUtils;
+unit DateTimeUtils;
 
 {$mode objfpc}{$H+}
 

@@ -118,7 +118,7 @@ procedure DoorGotoXY(AX, AY: Byte);
 procedure DoorGotoY(AY: Byte);
 function DoorInput(ADefaultText, AAllowedCharacters: String; APasswordCharacter: Char; AVisibleLength, AMaxLength, AAttr: Byte): String;
 function DoorKeyPressed: Boolean;
-function DoorLiteBar: Boolean;
+function DoorLiteBar(APageSize: Integer): Boolean;
 function DoorLocal: Boolean;
 function DoorOpenComm: Boolean;
 function DoorReadKey: Char;
@@ -480,7 +480,7 @@ begin
   if Not(DoorLocal) then Result := Result OR CommCharAvail;
 end;
 
-function DoorLiteBar: Boolean;
+function DoorLiteBar(APageSize: Integer): Boolean;
 var
   Ch: Char;
   I: Integer;
@@ -493,6 +493,8 @@ begin
   DoorCursorSave;
   for I := 0 to DoorLiteBarOptions.Count - 1 do
   begin
+    // Only output as many items as requested
+    if (I = APageSize) then Break;
 
     if (I > 0) then
     begin
@@ -532,7 +534,7 @@ begin
           end;
           '6', '2', 'M', 'P':
           begin
-           if (DoorLiteBarIndex < (DoorLiteBarOptions.Count - 1)) then
+           if ((DoorLiteBarIndex < (APageSize - 1)) AND (DoorLiteBarIndex < (DoorLiteBarOptions.Count - 1))) then
             begin
               // Erase old highlight
               DoorCursorRestore;

@@ -513,6 +513,7 @@ begin
       case Ch of
           '8', '4', 'H', 'K':
           begin
+            // TODO Once scrolling to next page is enabled, allow scrolling to previous page
             if (DoorLiteBarIndex > 0) then
             begin
               // Erase old highlight
@@ -534,7 +535,8 @@ begin
           end;
           '6', '2', 'M', 'P':
           begin
-           if ((DoorLiteBarIndex < (APageSize - 1)) AND (DoorLiteBarIndex < (DoorLiteBarOptions.Count - 1))) then
+            // TODO Allow scrolling to the next page
+            if ((DoorLiteBarIndex < (APageSize - 1)) AND (DoorLiteBarIndex < (DoorLiteBarOptions.Count - 1))) then
             begin
               // Erase old highlight
               DoorCursorRestore;

@@ -113,6 +113,7 @@ procedure DoorCursorRestore;
 procedure DoorCursorRight(ACount: Byte);
 procedure DoorCursorSave;
 procedure DoorCursorUp(ACount: Byte);
+procedure DoorDisplayFile(AFilename: String);
 procedure DoorGotoX(AX: Byte);
 procedure DoorGotoXY(AX, AY: Byte);
 procedure DoorGotoY(AY: Byte);
@@ -343,6 +344,42 @@ begin
     if Assigned(DoorOnStatusBar) then DoorOnStatusBar;
 
     DoorSession.EventsTime := Now;
+  end;
+end;
+
+{
+  Display a file to screen
+}
+procedure DoorDisplayFile(AFilename: String);
+var
+  InFile: TextFile;
+  S: String;
+begin
+  // Set the name of the file that will be read
+  AssignFile(InFile, AFilename);
+
+  // Embed the file handling in a try/except block to handle errors gracefully
+  try
+    // Open the file for reading
+    Reset(InFile);
+
+    // Keep reading lines until the end of the file is reached
+    while not Eof(InFile) do
+    begin
+      ReadLn(InFile, S);
+      DoorWrite(S);
+      if Not(Eof(InFile)) then DoorWriteLn;
+    end;
+
+    // Done so close the file
+    CloseFile(InFile);
+  except
+    on E: EInOutError do
+    begin
+      DoorWriteLn('Error reading "' + AFilename + '": ' + E.Message);
+      DoorWriteLn('Hit a key to continue');
+      DoorReadKey;
+    end;
   end;
 end;
 

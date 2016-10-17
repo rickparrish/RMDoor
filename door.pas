@@ -132,6 +132,7 @@ procedure DoorTextBackground(AColour: Byte);
 procedure DoorTextColour(AColour: Byte);
 procedure DoorTextColourAndBlink(AColour: Byte; ABlink: Boolean);
 procedure DoorWrite(AText: String);
+procedure DoorWriteCentered(AText: String);
 procedure DoorWriteLn;
 procedure DoorWriteLn(AText: String);
 

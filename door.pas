@@ -1096,6 +1096,22 @@ begin
 end;
 
 {
+  Writes a string centered on the screen.
+}
+procedure DoorWriteCentered(AText: String);
+begin
+  if (DoorSession.SethWrite) then
+  begin
+    DoorGotoX((80 - Length(SethStrip(AText))) div 2);
+  end else
+  begin
+    DoorGotoX((80 - Length(AText)) div 2);
+  end;
+
+  DoorWrite(AText);
+end;
+
+{
   Writes a CR/LF
 }
 procedure DoorWriteLn;

@@ -232,12 +232,10 @@ begin
   WriteLn(' Example: ' + ExtractFileName(ParamStr(0)) + ' -DC:\BBS\NODE1\DOOR32.SYS');
   WriteLn;
   WriteLn(' Pass settings on command-line');
-  WriteLn('  -N         NODE NUMBER (REQUIRED)');
-  WriteLn('  -H         COM PORT OR SOCKET HANDLE (REQUIRED)');
-  WriteLn('  -T         -H PARAMETER IS A SOCKET HANDLE NOT A COM PORT NUMBER');
+  WriteLn('  -N         NODE NUMBER');
+  WriteLn('  -S         SOCKET HANDLE');
   //TODO WriteLn('  -W         WINSERVER DOOR32 MODE');
-  WriteLn(' Example: ' + ExtractFileName(ParamStr(0)) + ' -N1 -H4');
-  WriteLn(' Example: ' + ExtractFileName(ParamStr(0)) + ' -N1 -H1000 -T');
+  WriteLn(' Example: ' + ExtractFileName(ParamStr(0)) + ' -N1 -S1000');
   WriteLn;
   WriteLn(' Run in local mode');
   WriteLn('  -L         LOCAL MODE');
@@ -811,14 +809,12 @@ var
    Local: Boolean;
    Node: Integer;
    S: String;
-   Telnet: Boolean;
    Wildcat: Boolean;
 begin
   DropFile := '';
   Local := True;
   Node := 0;
   Socket := -1;
-  Telnet := False;
   Wildcat := False;
 
   if (ParamCount > 0) then
@@ -836,14 +832,10 @@ begin
                  Local := False;
                  DropFile := S;
                end;
-          'H': begin
+          'N': Node := StrToIntDef(S, 0);
+          'S': begin
                  Local := False;
                  Socket := StrToIntDef(S, -1);
-               end;
-          'N': Node := StrToIntDef(S, 0);
-          'T': begin
-                 Local := False;
-                 Telnet := True;
                end;
           {$IFDEF WIN32}
           'W': begin
@@ -874,15 +866,8 @@ begin
   if (Socket >= 0) and (Node > 0) then
   begin
     DoorDropInfo.ComNum := Socket;
+    DoorDropInfo.ComType := 2;
     DoorDropInfo.Node := Node;
-
-    if (Telnet) then
-    begin
-      DoorDropInfo.ComType := 2
-    end else
-    begin
-      DoorDropInfo.ComType := 1;
-    end;
   end else
   if (DropFile <> '') then
   begin
@@ -905,7 +890,8 @@ begin
     begin
       ClrScr;
       WriteLn;
-      WriteLn('  Drop File Not Found');
+      WriteLn('  Drop File Does Not Exist Or Is Not Supported:');
+      WriteLn('  ' + DropFile);
       WriteLn;
       Delay(2500);
       Halt;

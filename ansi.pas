@@ -11,6 +11,7 @@ const
   AnsiColours: Array[0..7] of Integer = (0, 4, 2, 6, 1, 5, 3, 7);
 
 function AnsiBlink(ABlink: Boolean): String;
+function AnsiClrEol: String;
 function AnsiClrScr: String;
 function AnsiCursorDown(ACount: Byte): String;
 function AnsiCursorLeft(ACount: Byte): String;
@@ -57,6 +58,11 @@ begin
   begin
     Result := #27 + '[0m' + AnsiTextBackground(TextAttr div 16) + AnsiTextColour(TextAttr mod 16);
   end;
+end;
+
+function AnsiClrEol: String;
+begin
+  Result := #27 + '[K';
 end;
 
 function AnsiClrScr: String;

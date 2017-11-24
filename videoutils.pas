@@ -192,6 +192,7 @@ begin
 
   Coord.X := AX - 1;
   Coord.Y := AY - 1;
+  NumRead := 0;
   ReadConsoleOutputAttribute(StdOut, @Attr, 1, Coord, NumRead);
   Result := Attr;
 end;
@@ -242,6 +243,7 @@ begin
 
   Coord.X := AX - 1;
   Coord.Y := AY - 1;
+  NumRead := 0;
   ReadConsoleOutputCharacter(StdOut, @Ch, 1, Coord, NumRead);
   if (NumRead = 0) then
   begin
@@ -383,6 +385,7 @@ function ScreenSizeX: Word;
 var
   CSBI: TConsoleScreenBufferInfo;
 begin
+  CSBI.wAttributes := 0; // Does nothing, other than avoids "does not seem to be initialized" hint
   GetConsoleScreenBufferInfo(StdOut, CSBI);
   ScreenSizeX := CSBI.srWindow.Right - CSBI.srWindow.Left + 1;
 end;
@@ -407,6 +410,7 @@ function ScreenSizeY: Word;
 var
   CSBI: TConsoleScreenBufferInfo;
 begin
+  CSBI.wAttributes := 0; // Does nothing, other than avoids "does not seem to be initialized" hint
   GetConsoleScreenBufferInfo(StdOut, CSBI);
   ScreenSizeY := CSBI.srWindow.Bottom - CSBI.srWindow.Top + 1;
 end;
@@ -472,6 +476,7 @@ begin
 
   WriteCoord.X := AX - 1;
   WriteCoord.Y := AY - 1;
+  NumWritten := 0;
   WriteConsoleOutputAttribute(StdOut, @AAttr, 1, WriteCoord, NumWritten);
 end;
 {$ENDIF}
@@ -536,6 +541,7 @@ begin
 
   WriteCoord.X := AX - 1;
   WriteCoord.Y := AY - 1;
+  NumWritten := 0;
   WriteConsoleOutputCharacter(StdOut, @ACh, 1, WriteCoord, NumWritten);
 end;
 {$ENDIF}

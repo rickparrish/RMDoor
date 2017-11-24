@@ -253,6 +253,7 @@ begin
       CanRead := (fpSelect(FCommNumber + 1, @FDSet, nil, nil, @Timeout) > 0);
     {$ENDIF}
     {$IFDEF WINDOWS}
+      FDSet.fd_array[0] := 0; // Does nothing, other than avoids "does not seem to be initialized" hint
       FD_ZERO(FDSet);
       FD_SET(FCommNumber, FDSet);
       CanRead := (Select(0, @FDSet, nil, nil, @Timeout) > 0);

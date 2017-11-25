@@ -142,10 +142,42 @@ begin
 end;
 
 procedure InitDoorDriver(AConfigFileName: String);
+var
+  I: Integer;
+  SawSpace: Boolean;
 begin
   // TODOX Big function, haven't confirmed matching implementation yet
   DoorStartUp;
-  // TODOX This is where all the properties in the initializer should be set
+
+  if (DoorDropInfo.Emulation = etASCII) then
+  begin
+    Graphics := 2;
+  end else
+  begin
+    Graphics := 3;
+  end;
+
+  Local := DoorLocal;
+  MaxTime := DoorDropInfo.MaxSeconds div 60;
+  Node_Num := DoorDropInfo.Node;
+
+  User_First_Name := '';
+  User_Last_Name := '';
+  SawSpace := false;
+  for I := 1 to Length(DoorDropInfo.RealName) do
+  begin
+    if (DoorDropInfo.RealName[I] = ' ') then
+    begin
+      SawSpace := true;
+    end else
+    if (SawSpace) then
+    begin
+      User_Last_Name := User_Last_Name + DoorDropInfo.RealName[I];
+    end else
+    begin
+      User_First_Name := User_First_Name + DoorDropInfo.RealName[I];
+    end;
+  end;
 end;
 
 function LoCase(ACh: Char): Char;

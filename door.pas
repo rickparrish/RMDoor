@@ -140,6 +140,7 @@ implementation
 
 var
   OldExitProc: Pointer;
+  STDIO: Boolean;
 
 procedure DoorDoEvents; forward;
 procedure NewExitProc; forward;
@@ -234,12 +235,15 @@ begin
   WriteLn(' Pass settings on command-line');
   WriteLn('  -N         NODE NUMBER');
   WriteLn('  -S         SOCKET HANDLE');
-  //TODO WriteLn('  -W         WINSERVER DOOR32 MODE');
   WriteLn(' Example: ' + ExtractFileName(ParamStr(0)) + ' -N1 -S1000');
   WriteLn;
   WriteLn(' Run in local mode');
   WriteLn('  -L         LOCAL MODE');
   WriteLn(' Example: ' + ExtractFileName(ParamStr(0)) + ' -L');
+  WriteLn;
+  WriteLn(' Optional parameters');
+  //TODO WriteLn('  -W         WINSERVER DOOR32 MODE');
+  WriteLn('  -X         DISABLE COMM ROUTINES (STDIO MODE)');
   WriteLn;
   Halt;
 end;
@@ -249,12 +253,12 @@ end;
 }
 function DoorCarrier: Boolean;
 begin
-  Result := DoorLocal OR CommCarrier;
+  Result := DoorLocal OR STDIO OR CommCarrier;
 end;
 
 procedure DoorClose(ADisconnect: Boolean);
 begin
-  if Not(DoorLocal) then CommClose(ADisconnect);
+  if Not(DoorLocal) AND NOT(STDIO) then CommClose(ADisconnect);
 end;
 
 {
@@ -340,7 +344,7 @@ begin
     if (DoorSecondsLeft mod 60 = 1) and (DoorSecondsLeft div 60 <= 5) and Assigned(DoorOnTimeUpWarning) then DoorOnTimeUpWarning(DoorSecondsLeft div 60);
 
     {Update Status Bar}
-    if Assigned(DoorOnStatusBar) then DoorOnStatusBar;
+    if Assigned(DoorOnStatusBar) AND NOT(STDIO) then DoorOnStatusBar;
 
     DoorSession.EventsTime := Now;
   end;
@@ -513,7 +517,7 @@ function DoorKeyPressed: Boolean;
 begin
   DoorDoEvents;
   Result := KeyPressed;
-  if Not(DoorLocal) then Result := Result OR CommCharAvail;
+  if Not(DoorLocal) AND NOT(STDIO) then Result := Result OR CommCharAvail;
 end;
 
 function DoorLiteBar(APageSize: Integer): Boolean;
@@ -621,7 +625,7 @@ var
   WC5User: TWC5User;
 {$ENDIF}
 begin
-  if (DoorDropInfo.ComNum = 0) or (DoorDropInfo.ComType = 0) then
+  if (DoorDropInfo.ComNum = 0) or (DoorDropInfo.ComType = 0) OR (STDIO) then
   begin
    DoorOpenComm := true;
   end else
@@ -687,7 +691,7 @@ begin
         DoorLastKey.Location := lkLocal;
       end;
     end else
-    if Not(DoorLocal) AND (CommCharAvail) then
+    if Not(DoorLocal) AND NOT(STDIO) AND (CommCharAvail) then
     begin
       // Check for remote keypress
       Ch := CommReadChar;
@@ -815,6 +819,7 @@ begin
   Local := True;
   Node := 0;
   Socket := -1;
+  STDIO := False;
   Wildcat := False;
 
   if (ParamCount > 0) then
@@ -843,6 +848,7 @@ begin
                  Wildcat := True;
                end;
           {$ENDIF}
+          'X': STDIO := True;
           else if Assigned(DoorOnCLP) then DoorOnCLP(Ch, S);
         end;
       end;
@@ -1077,7 +1083,7 @@ begin
   end else
   begin
     AnsiWrite(AText);
-    if Not(DoorLocal) then CommWrite(AText);
+    if Not(DoorLocal) AND NOT(STDIO) then CommWrite(AText);
   end;
 end;
 
@@ -1124,7 +1130,7 @@ begin
      DoorCursorDown(255);
      DoorCursorLeft(255);
 
-     if Not(DoorLocal) then DoorClose(false);
+     if Not(DoorLocal) AND NOT(STDIO) then DoorClose(false);
 end;
 
 begin

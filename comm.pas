@@ -192,6 +192,11 @@ procedure CommWriteBlock(var Block; BlockLen: LongInt);
     Selector, Segment: Word;
 {$ENDIF}
 begin
+  // No need to do anything if BlockLen <= 0.  This also fixes a bug reported
+  // by xbit, where the GO32V2 version would appear to work in local mode because
+  // Global_DOS_Alloc would set Int31Error = 8 when the BlockLen = 0
+  if (BlockLen <= 0) then Exit;
+
   {$IFDEF COMM_SOCKET}
     fpSend(FCommNumber, @Block, BlockLen, 0);
   {$ENDIF}

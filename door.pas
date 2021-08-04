@@ -174,8 +174,10 @@ begin
   DoorWriteLn;
   DoorWriteLn('  |09Run ' + ExtractFileName(ParamStr(0)) + ' /? for command-line usage help|07');
   DoorWriteLn;
-  DoorWrite('  |0AName or handle |0F:|07 ');
-  S := DoorInput('SYSOP', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 40, 40, 31);
+  repeat
+    DoorWrite('  |0AName or handle |0F:|07 ');
+    S := DoorInput('SYSOP', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 40, 40, 31);
+  until (S <> '');
   DoorDropInfo.RealName := S;
   DoorDropInfo.Alias := S;
 end;
@@ -500,7 +502,7 @@ begin
           DoorWrite(APasswordCharacter);
       end;
     end;
-  until (Ch = #27) or ((Ch = #13) and (S <> ''));
+  until (Ch = #27) or (Ch = #13);
 
   DoorTextAttr(SavedAttr);
   DoorWriteLn;

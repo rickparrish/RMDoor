@@ -662,8 +662,6 @@ end;
 {
   Returns the next character in the input buffer and updates the TLastKey
   record.
-  At this time remote input is read as-is.  In a later version I may add
-  ANSI parsing so arrow keys could be read.
 }
 function DoorReadKey: Char;
 var

@@ -127,6 +127,7 @@ function DoorSecondsIdle: LongInt;
 function DoorSecondsLeft: LongInt;
 procedure DoorShutDown;
 procedure DoorStartUp;
+function DoorSTDIO: Boolean;
 procedure DoorTextAttr(AAttr: Byte);
 procedure DoorTextBackground(AColour: Byte);
 procedure DoorTextColour(AColour: Byte);
@@ -346,7 +347,7 @@ begin
     if (DoorSecondsLeft mod 60 = 1) and (DoorSecondsLeft div 60 <= 5) and Assigned(DoorOnTimeUpWarning) then DoorOnTimeUpWarning(DoorSecondsLeft div 60);
 
     {Update Status Bar}
-    if Assigned(DoorOnStatusBar) AND NOT(STDIO) then DoorOnStatusBar;
+    if Assigned(DoorOnStatusBar) AND NOT(DoorLocal) AND NOT(STDIO) then DoorOnStatusBar;
 
     DoorSession.EventsTime := Now;
   end;
@@ -934,6 +935,14 @@ begin
     DoorClrScr;
     Window(1, 1, 80, 24);
   end;
+end;
+
+{
+  Returns TRUE if the door is being run in STDIO mode
+}
+function DoorSTDIO: Boolean;
+begin
+  Result := STDIO;
 end;
 
 {

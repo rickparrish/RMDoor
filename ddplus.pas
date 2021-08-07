@@ -51,7 +51,7 @@ uses
 
 procedure Display_Status(AForce: Boolean);    {jakob added force!}
 begin
-  if Assigned(DoorOnStatusBar) then DoorOnStatusBar;
+  if Assigned(DoorOnStatusBar) AND NOT(DoorLocal) AND NOT(DoorSTDIO) then DoorOnStatusBar;
 end;
 
 procedure DisplayFile1(const AFileName: string); {jakobs special! remove original!}

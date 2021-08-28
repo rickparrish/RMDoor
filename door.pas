@@ -127,6 +127,7 @@ function DoorSecondsIdle: LongInt;
 function DoorSecondsLeft: LongInt;
 procedure DoorShutDown;
 procedure DoorStartUp;
+function DoorSTDIO: Boolean;
 procedure DoorTextAttr(AAttr: Byte);
 procedure DoorTextBackground(AColour: Byte);
 procedure DoorTextColour(AColour: Byte);
@@ -174,8 +175,10 @@ begin
   DoorWriteLn;
   DoorWriteLn('  |09Run ' + ExtractFileName(ParamStr(0)) + ' /? for command-line usage help|07');
   DoorWriteLn;
-  DoorWrite('  |0AName or handle |0F:|07 ');
-  S := DoorInput('SYSOP', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 40, 40, 31);
+  repeat
+    DoorWrite('  |0AName or handle |0F:|07 ');
+    S := DoorInput('SYSOP', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 40, 40, 31);
+  until (S <> '');
   DoorDropInfo.RealName := S;
   DoorDropInfo.Alias := S;
 end;
@@ -344,7 +347,7 @@ begin
     if (DoorSecondsLeft mod 60 = 1) and (DoorSecondsLeft div 60 <= 5) and Assigned(DoorOnTimeUpWarning) then DoorOnTimeUpWarning(DoorSecondsLeft div 60);
 
     {Update Status Bar}
-    if Assigned(DoorOnStatusBar) AND NOT(STDIO) then DoorOnStatusBar;
+    if Assigned(DoorOnStatusBar) AND NOT(DoorLocal) AND NOT(STDIO) then DoorOnStatusBar;
 
     DoorSession.EventsTime := Now;
   end;
@@ -500,7 +503,7 @@ begin
           DoorWrite(APasswordCharacter);
       end;
     end;
-  until (Ch = #27) or ((Ch = #13) and (S <> ''));
+  until (Ch = #27) or (Ch = #13);
 
   DoorTextAttr(SavedAttr);
   DoorWriteLn;
@@ -660,8 +663,6 @@ end;
 {
   Returns the next character in the input buffer and updates the TLastKey
   record.
-  At this time remote input is read as-is.  In a later version I may add
-  ANSI parsing so arrow keys could be read.
 }
 function DoorReadKey: Char;
 var
@@ -934,6 +935,14 @@ begin
     DoorClrScr;
     Window(1, 1, 80, 24);
   end;
+end;
+
+{
+  Returns TRUE if the door is being run in STDIO mode
+}
+function DoorSTDIO: Boolean;
+begin
+  Result := STDIO;
 end;
 
 {

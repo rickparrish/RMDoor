@@ -28,21 +28,32 @@ type
     C = Found In DOOR.SYS
     D = Found In INFO.*
     E = Supported By WINServer
+    F = Found in Phenom Drop
   }
   TDoorDropInfo = Record
-    Access    : LongInt;            {ABC--} {User's Access Level}
-    Alias     : String;             {ABCDE} {User's Alias/Handle}
-    Baud      : LongInt;            {ABCDE} {Connection Baud Rate}
-    Clean     : Boolean;            {---D-} {Is LORD In Clean Mode?}
-    ComNum    : LongInt;            {ABCD-} {Comm/Socket Number}
-    ComType   : Byte;               {A----} {Comm Type (0=Local, 1=Serial, 2=Socket, 3=WC5}
-    Emulation : TDoorEmulationType; {ABCDE} {User's Emulation (etANSI or etASCII)}
-    Fairy     : Boolean;            {---D-} {Does LORD User Have Fairy?}
-    MaxSeconds: LongInt;            {ABCDE} {User's Time Left At Start (In Seconds)}
-    Node      : LongInt;            {A-C-E} {Node Number}
-    RealName  : String;             {ABCDE} {User's Real Name}
-    RecPos    : LongInt;            {A-CD-} {User's Userfile Record Position (Always 0 Based)}
-    Registered: Boolean;            {---D-} {Is LORD Registered?}
+    Access    : LongInt;            {ABC--F} {User's Access Level}
+    Alias     : String;             {ABCDEF} {User's Alias/Handle}
+    XtendPalette: boolean;          {-----F} {Supports extended palette}
+    LoadableFonts: boolean;         {-----F} {Supports loadable fonts}
+    Baud      : LongInt;            {ABCDE-} {Connection Baud Rate}
+    BBSName   : String;             {-----F} {Name of the BBS}
+    Clean     : Boolean;            {---D--} {Is LORD In Clean Mode?}
+    ComNum    : LongInt;            {ABCD--} {Comm/Socket Number}
+    ComType   : Byte;               {A-----} {Comm Type (0=Local, 1=Serial, 2=Socket, 3=WC5}
+    Columns   : LongInt;            {-----F} {Columns}
+    Domain    : String;             {-----F} {BBS Domain}
+    Directory : String;             {-----F} {BBS Directory}
+    Emulation : TDoorEmulationType; {ABCDEF} {User's Emulation (etANSI or etASCII)}
+    Fairy     : Boolean;            {---D--} {Does LORD User Have Fairy?}
+    MaxSeconds: LongInt;            {ABCDEF} {User's Time Left At Start (In Seconds)}
+    Node      : LongInt;            {A-C-EF} {Node Number}
+    OSType    : String;             {-----F} {OS Type} 
+    RealName  : String;             {ABCDE-} {User's Real Name}
+    RecPos    : LongInt;            {A-CD--} {User's Userfile Record Position (Always 0 Based)}
+    Registered: Boolean;            {---D--} {Is LORD Registered?}
+    Rows      : LongInt;            {-----F} {Rows}
+    Sysop     : String;             {-----F} {Sysop Name}
+    SecurityLevel: LongInt;         {-----F} {Security Level}
   end;
 
   TDoorLastKeyType = (lkNone, lkLocal, lkRemote);
@@ -893,6 +904,10 @@ begin
     if (FileExists(DropFile)) and (AnsiContainsText(DropFile, 'INFO.')) then
     begin
       ReadLordInfo(DropFile);
+    end else
+    if (FileExists(DropFile)) and (AnsiContainsText(DropFile, 'PHENOMDROP.TXT')) then
+    begin
+      ReadPhenomDrop(DropFile);
     end else
     begin
       ClrScr;

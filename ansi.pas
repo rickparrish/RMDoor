@@ -353,4 +353,3 @@ begin
   SetLength(AnsiParams, 1);
   AnsiParams[0] := 0; // Never access [0] directly
 end.
-

@@ -11,6 +11,7 @@ procedure ReadDoor32(AFileName: String);
 procedure ReadDoorSys(AFileName: String);
 procedure ReadDorinfo(AFileName: String);
 procedure ReadLordInfo(AFileName: String);
+procedure ReadPhenomDrop(AFileName: String);
 
 implementation
 
@@ -349,5 +350,98 @@ begin
      end;
 end;
 
-end.
+{
+  Read the phenomdrop.txt file AFILE
+}
 
+procedure ReadPhenomDrop(AFileName: String);
+var
+   F: Text;
+   S: String;
+begin
+   if (FileExists(AFileName)) then
+   begin
+      Assign(F, AFileName);
+      {$I-}Reset(F);{$I+}
+      if (IOResult = 0) then
+      begin
+         ReadLn(F, S); {1-Current Node Number}
+         writeln(S);
+         DoorDropInfo.Node := StrToIntDef(S, 0);
+
+         ReadLn(F, S); {2-BBS Name}
+         writeln(S);
+         DoorDropInfo.BBSName := S;
+
+         ReadLn(F, S); {3-Sysop}
+         writeln(S);
+         DoorDropInfo.Sysop := S;
+
+         ReadLn(F, S); {4-Username}
+         writeln(S);
+         DoorDropInfo.RealName := S;
+
+         ReadLn(F, S); {5-Security Level}
+         writeln(S);
+         DoorDropInfo.SecurityLevel := StrToIntDef(S, 0);
+
+         ReadLn(F, S); {6-Time limit - Minutes -> Seconds}
+         writeln(S);
+         DoorDropInfo.MaxSeconds := (StrToIntDef(S, 0)*60);
+
+         ReadLn(F, S); {7-Columns}
+         writeln(S);
+         DoorDropInfo.Columns := StrToIntDef(S, 0);
+
+         ReadLn(F, S); {8-Rows}
+         writeln(S);
+         DoorDropInfo.Rows := StrToIntDef(S, 0);
+
+         ReadLn(F, S); {9-OSType}
+         writeln(S);
+         DoorDropInfo.OSType := S;
+
+         ReadLn(F, S); {10-BBS Directory}
+         writeln(S);
+         DoorDropInfo.Directory := S;
+
+         ReadLn(F, S); {11-BBS Domain}
+         writeln(S);
+         DoorDropInfo.Domain := S;
+
+         ReadLn(F, S); {12-Supports Loadable Fonts}
+         writeln(S);
+         if (UpperCase(S) = 'YES') then
+            DoorDropInfo.LoadableFonts := True
+         else
+            DoorDropInfo.LoadableFonts := False;
+
+         ReadLn(F, S); {13-Supports Extended Palette}
+         if (UpperCase(S) = 'YES') then
+            DoorDropInfo.XtendPalette := True
+         else
+            DoorDropInfo.XtendPalette := False;
+         
+         DoorDropInfo.Emulation := etANSI;
+
+         (* TEST *)
+         {
+         WriteLn('Door Drop Information for Phenom Test');
+         WriteLn('DoorDrop - Node:' + IntToStr(DoorDropInfo.Node));
+         WriteLn('DoorDrop - BBS Name:' + DoorDropInfo.BBSName);
+         WriteLn('DoorDrop - BBS Domain:' + DoorDropInfo.Domain);
+         WriteLn('DoorDrop - BBS Directory:' + DoorDropInfo.Directory);
+         WriteLn('DoorDrop - Sysop:' + DoorDropInfo.Sysop);
+         WriteLn('DoorDrop - UserName:' + DoorDropInfo.RealName);
+         WriteLn('DoorDrop - SecurityLevel:' + IntToStr(DoorDropInfo.SecurityLevel));
+         WriteLn('DoorDrop - MaxSeconds:' + IntToStr(DoorDropInfo.MaxSeconds));
+         WriteLn('DoorDrop - Columns:' + IntToStr(DoorDropInfo.Columns));
+         WriteLn('DoorDrop - Rows:' + IntToStr(DoorDropInfo.Rows));
+         WriteLn('DoorDrop - OSType:' + DoorDropInfo.OSType);
+         WriteLn('DoorDrop - LoadableFonts:' + BoolToStr(DoorDropInfo.LoadableFonts));
+         WriteLn('DoorDrop - XtendPalette:' + BoolToStr(DoorDropInfo.XtendPalette));
+         }
+      end;
+   end;
+end;
+end.

@@ -33,18 +33,17 @@ type
   TDoorDropInfo = Record
     Access    : LongInt;            {ABC--F} {User's Access Level}
     Alias     : String;             {ABCDEF} {User's Alias/Handle}
-    XtendPalette: boolean;          {-----F} {Supports extended palette}
-    LoadableFonts: boolean;         {-----F} {Supports loadable fonts}
     Baud      : LongInt;            {ABCDE-} {Connection Baud Rate}
     BBSName   : String;             {-----F} {Name of the BBS}
     Clean     : Boolean;            {---D--} {Is LORD In Clean Mode?}
-    ComNum    : LongInt;            {ABCD--} {Comm/Socket Number}
+    ComNum    : LongInt;            {ABCD-F} {Comm/Socket Number}
     ComType   : Byte;               {A-----} {Comm Type (0=Local, 1=Serial, 2=Socket, 3=WC5}
     Columns   : LongInt;            {-----F} {Columns}
     Domain    : String;             {-----F} {BBS Domain}
     Directory : String;             {-----F} {BBS Directory}
     Emulation : TDoorEmulationType; {ABCDEF} {User's Emulation (etANSI or etASCII)}
     Fairy     : Boolean;            {---D--} {Does LORD User Have Fairy?}
+    LoadableFonts: boolean;         {-----F} {Supports loadable fonts}
     MaxSeconds: LongInt;            {ABCDEF} {User's Time Left At Start (In Seconds)}
     Node      : LongInt;            {A-C-EF} {Node Number}
     OSType    : String;             {-----F} {OS Type} 
@@ -54,6 +53,7 @@ type
     Rows      : LongInt;            {-----F} {Rows}
     Sysop     : String;             {-----F} {Sysop Name}
     SecurityLevel: LongInt;         {-----F} {Security Level}
+    XtendPalette : Boolean;         {-----F} {Supports extended palette}
   end;
 
   TDoorLastKeyType = (lkNone, lkLocal, lkRemote);

@@ -365,9 +365,19 @@ begin
       {$I-}Reset(F);{$I+}
       if (IOResult = 0) then
       begin
-         ReadLn(F, S); {1-Current Node Number}
+         DoorDropInfo.Emulation := etANSI;
+
+         ReadLn(F, S); {* - Current Node Number}
          writeln(S);
          DoorDropInfo.Node := StrToIntDef(S, 0);
+
+         (* Comm type and number plus baud rate defaulted since not included in the format *)
+         if (DoorDropInfo.Node = 0) then {0 - Comm Type (0=Local, 1=Serial, 2=Telnet)}
+            DoorDropInfo.ComType := 0
+         else 
+            DoorDropInfo.ComType := 2;
+         DoorDropInfo.Baud := 38400;
+         DoorDropInfo.ComNum := StrToIntDef(S, -1);
 
          ReadLn(F, S); {2-BBS Name}
          writeln(S);
@@ -422,7 +432,8 @@ begin
          else
             DoorDropInfo.XtendPalette := False;
          
-         DoorDropInfo.Emulation := etANSI;
+         ReadLn(F, S); {14 - Comm Or Socket Handle}
+         DoorDropInfo.ComNum := StrToIntDef(S, -1);
 
          (* TEST *)
          {

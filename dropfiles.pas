@@ -352,6 +352,14 @@ end;
 
 {
   Read the phenomdrop.txt file AFILE
+
+  Since RMDoor requires the socket, and BBS software like Mystic doesn't support 
+  access to it in Python. To work around in this in the meantime, a small batch 
+  file can be used to append the socket from door parameters:
+
+  REM -- append socket address at the end of the file
+  echo %2 >> %1
+  provinggrounds -D%1
 }
 
 procedure ReadPhenomDrop(AFileName: String);
@@ -368,8 +376,7 @@ begin
          DoorDropInfo.Emulation := etANSI;
 
          ReadLn(F, S); {* - Current Node Number}
-         writeln(S);
-         DoorDropInfo.Node := StrToIntDef(S, 0);
+         DoorDropInfo.Node := StrToIntDef(trim(S), 0);
 
          (* Comm type and number plus baud rate defaulted since not included in the format *)
          if (DoorDropInfo.Node = 0) then {0 - Comm Type (0=Local, 1=Serial, 2=Telnet)}
@@ -377,50 +384,38 @@ begin
          else 
             DoorDropInfo.ComType := 2;
          DoorDropInfo.Baud := 38400;
-         DoorDropInfo.ComNum := StrToIntDef(S, -1);
 
          ReadLn(F, S); {2-BBS Name}
-         writeln(S);
          DoorDropInfo.BBSName := S;
 
          ReadLn(F, S); {3-Sysop}
-         writeln(S);
          DoorDropInfo.Sysop := S;
 
          ReadLn(F, S); {4-Username}
-         writeln(S);
          DoorDropInfo.RealName := S;
 
          ReadLn(F, S); {5-Security Level}
-         writeln(S);
-         DoorDropInfo.SecurityLevel := StrToIntDef(S, 0);
+         DoorDropInfo.SecurityLevel := StrToIntDef(trim(S), 0);
 
          ReadLn(F, S); {6-Time limit - Minutes -> Seconds}
-         writeln(S);
-         DoorDropInfo.MaxSeconds := (StrToIntDef(S, 0)*60);
+         DoorDropInfo.MaxSeconds := (StrToIntDef(trim(S), 0)*60);
 
          ReadLn(F, S); {7-Columns}
-         writeln(S);
-         DoorDropInfo.Columns := StrToIntDef(S, 0);
+         DoorDropInfo.Columns := StrToIntDef(trim(S), 0);
 
          ReadLn(F, S); {8-Rows}
-         writeln(S);
-         DoorDropInfo.Rows := StrToIntDef(S, 0);
+         DoorDropInfo.Rows := StrToIntDef(trim(S), 0);
 
          ReadLn(F, S); {9-OSType}
-         writeln(S);
          DoorDropInfo.OSType := S;
 
          ReadLn(F, S); {10-BBS Directory}
-         writeln(S);
          DoorDropInfo.Directory := S;
 
          ReadLn(F, S); {11-BBS Domain}
-         writeln(S);
          DoorDropInfo.Domain := S;
 
          ReadLn(F, S); {12-Supports Loadable Fonts}
-         writeln(S);
          if (UpperCase(S) = 'YES') then
             DoorDropInfo.LoadableFonts := True
          else
@@ -433,7 +428,7 @@ begin
             DoorDropInfo.XtendPalette := False;
          
          ReadLn(F, S); {14 - Comm Or Socket Handle}
-         DoorDropInfo.ComNum := StrToIntDef(S, -1);
+         DoorDropInfo.ComNum := StrToIntDef(trim(S), -1);
 
          (* TEST *)
          {
@@ -451,6 +446,7 @@ begin
          WriteLn('DoorDrop - OSType:' + DoorDropInfo.OSType);
          WriteLn('DoorDrop - LoadableFonts:' + BoolToStr(DoorDropInfo.LoadableFonts));
          WriteLn('DoorDrop - XtendPalette:' + BoolToStr(DoorDropInfo.XtendPalette));
+         WriteLn('DoorDrop - ComNum:' + IntToStr(DoorDropInfo.ComNum)); 
          }
       end;
    end;

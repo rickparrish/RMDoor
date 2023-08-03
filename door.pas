@@ -74,6 +74,7 @@ type
     DoIdleCheck: Boolean;  { Check for idle timeout? }
     Events: Boolean;       { Run Events in mKeyPressed function }
     EventsTime: TDateTime; { MSecToday of last Events run }
+    LocalWrite: Boolean;   { Whether to write to local console or not }
     MaxIdle: LongInt;      { Max idle before kick (in seconds) }
     SethWrite: Boolean;    { Whether to interpret ` codes }
     TimeOn: TDateTime;     { SecToday program was started }
@@ -114,6 +115,7 @@ procedure DoorCursorRight(ACount: Byte);
 procedure DoorCursorSave;
 procedure DoorCursorUp(ACount: Byte);
 procedure DoorDisplayFile(AFilename: String);
+procedure DoorDisplaySixel(AFilename: String);
 procedure DoorGotoX(AX: Byte);
 procedure DoorGotoXY(AX, AY: Byte);
 procedure DoorGotoY(AY: Byte);
@@ -387,6 +389,27 @@ begin
       DoorReadKey;
     end;
   end;
+end;
+
+{
+  Display a sixel file to screen
+}
+procedure DoorDisplaySixel(AFilename: String);
+var
+  OldLocalWrite: Boolean;
+begin
+  // Sixel files look like garbage when displayed to the local screen, and it's
+  // also super slow (~5 seconds to display a small 35k image), so we temporarily
+  // disable local writing before calling the DoorDisplayFile method
+  AnsiWriteLn('Displaying sixel file: ' + AFilename);
+  OldLocalWrite := DoorSession.LocalWrite;
+  DoorSession.LocalWrite := false;
+
+  // Display the file
+  DoorDisplayFile(AFilename);
+
+  // Restore LocalWrite flag
+  DoorSession.LocalWrite := OldLocalWrite;
 end;
 
 {
@@ -1091,7 +1114,7 @@ begin
     end;
   end else
   begin
-    AnsiWrite(AText);
+    if (DoorSession.LocalWrite) then AnsiWrite(AText);
     if Not(DoorLocal) AND NOT(STDIO) then CommWrite(AText);
   end;
 end;
@@ -1195,6 +1218,7 @@ begin
        DoIdleCheck := True;
        Events := False;
        EventsTime := 0;
+       LocalWrite := true;
        MaxIdle := 300;
        SethWrite := false;
        TimeOn := 0;

@@ -311,7 +311,7 @@ end;
 }
 procedure DoorCursorUp(ACount: Byte);
 begin
-  DoorWrite(AnsiCursorDown(ACount));
+  DoorWrite(AnsiCursorUp(ACount));
 end;
 
 {

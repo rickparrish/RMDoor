@@ -74,6 +74,7 @@ type
     DoIdleCheck: Boolean;  { Check for idle timeout? }
     Events: Boolean;       { Run Events in mKeyPressed function }
     EventsTime: TDateTime; { MSecToday of last Events run }
+    LocalRead: Boolean;    { Whether to read from the local console or not }
     LocalWrite: Boolean;   { Whether to write to local console or not }
     MaxIdle: LongInt;      { Max idle before kick (in seconds) }
     SethWrite: Boolean;    { Whether to interpret ` codes }
@@ -249,6 +250,7 @@ begin
   WriteLn(' Optional parameters');
   //TODO WriteLn('  -W         WINSERVER DOOR32 MODE');
   WriteLn('  -X         DISABLE COMM ROUTINES (STDIO MODE)');
+  WriteLn('  -Z         DISABLE LOCAL INPUT');
   WriteLn;
   Halt;
 end;
@@ -542,7 +544,8 @@ end;
 function DoorKeyPressed: Boolean;
 begin
   DoorDoEvents;
-  Result := KeyPressed;
+  Result := false;
+  if (DoorSession.LocalRead) then Result := Result OR KeyPressed;
   if Not(DoorLocal) AND NOT(STDIO) then Result := Result OR CommCharAvail;
 end;
 
@@ -697,7 +700,7 @@ begin
   repeat
     while Not(DoorKeyPressed) do Sleep(1);
 
-    if (KeyPressed) then
+    if (DoorSession.LocalRead AND KeyPressed) then
     begin
       // Check for local keypress
       Ch := ReadKey;
@@ -873,6 +876,7 @@ begin
                end;
           {$ENDIF}
           'X': STDIO := True;
+          'Z': DoorSession.LocalRead := False;
           else if Assigned(DoorOnCLP) then DoorOnCLP(Ch, S);
         end;
       end;
@@ -1218,6 +1222,7 @@ begin
        DoIdleCheck := True;
        Events := False;
        EventsTime := 0;
+       LocalRead := true;
        LocalWrite := true;
        MaxIdle := 300;
        SethWrite := false;

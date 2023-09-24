@@ -12,7 +12,6 @@ var
 begin
   try
     try
-      raise Exception.Create('test');
       DoorStartUp();
 
       DoorClrScr();
@@ -33,6 +32,7 @@ begin
     except
       on E: Exception do
       begin
+        DoorSession.SethWrite := True;
         DoorWriteLn();
         DoorWriteLn('`4`b**`% ERROR : `2' + E.Message + ' `4`b**`2');
         DoorWrite('Hit a key to quit');

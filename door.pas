@@ -45,7 +45,7 @@ type
     Registered: Boolean;            {---D-} {Is LORD Registered?}
   end;
 
-  TDoorLastKeyType = (lkNone, lkLocal, lkRemote);
+  TDoorLastKeyType = (lkNone, lkSysOp, lkUser);
 
   {
     Information about the last key pressed is stored in this record.
@@ -74,9 +74,8 @@ type
     DoIdleCheck: Boolean;  { Check for idle timeout? }
     Events: Boolean;       { Run Events in mKeyPressed function }
     EventsTime: TDateTime; { MSecToday of last Events run }
-    LocalRead: Boolean;    { Whether to read from the local console or not }
-    LocalWrite: Boolean;   { Whether to write to local console or not }
     MaxIdle: LongInt;      { Max idle before kick (in seconds) }
+    PipeWrite: Boolean;    { Whether to interpret | codes }
     SethWrite: Boolean;    { Whether to interpret ` codes }
     TimeOn: TDateTime;     { SecToday program was started }
   end;
@@ -123,7 +122,6 @@ procedure DoorGotoY(AY: Byte);
 function DoorInput(ADefaultText, AAllowedCharacters: String; APasswordCharacter: Char; AVisibleLength, AMaxLength, AAttr: Byte): String;
 function DoorKeyPressed: Boolean;
 function DoorLiteBar(APageSize: Integer): Boolean;
-function DoorLocal: Boolean;
 function DoorOpenComm: Boolean;
 function DoorReadKey: Char;
 function DoorSecondsIdle: LongInt;
@@ -143,6 +141,7 @@ procedure DoorWriteLn(AText: String);
 implementation
 
 var
+  DisplayingSixel: Boolean;
   OldExitProc: Pointer;
   STDIO: Boolean;
 
@@ -260,12 +259,12 @@ end;
 }
 function DoorCarrier: Boolean;
 begin
-  Result := DoorLocal OR STDIO OR CommCarrier;
+  Result := STDIO OR CommCarrier;
 end;
 
 procedure DoorClose(ADisconnect: Boolean);
 begin
-  if Not(DoorLocal) AND NOT(STDIO) then CommClose(ADisconnect);
+  if NOT(STDIO) then CommClose(ADisconnect);
 end;
 
 {
@@ -350,8 +349,10 @@ begin
     {Check For Time Up Warning}
     if (DoorSecondsLeft mod 60 = 1) and (DoorSecondsLeft div 60 <= 5) and Assigned(DoorOnTimeUpWarning) then DoorOnTimeUpWarning(DoorSecondsLeft div 60);
 
-    {Update Status Bar}
-    if Assigned(DoorOnStatusBar) AND NOT(DoorLocal) AND NOT(STDIO) then DoorOnStatusBar;
+    {Update Status Bar (if not STDIO, and not Unix)}
+    {$IFNDEF UNIX}
+    if Assigned(DoorOnStatusBar) AND NOT(STDIO) then DoorOnStatusBar;
+    {$ENDIF}
 
     DoorSession.EventsTime := Now;
   end;
@@ -397,21 +398,14 @@ end;
   Display a sixel file to screen
 }
 procedure DoorDisplaySixel(AFilename: String);
-var
-  OldLocalWrite: Boolean;
 begin
   // Sixel files look like garbage when displayed to the local screen, and it's
   // also super slow (~5 seconds to display a small 35k image), so we temporarily
   // disable local writing before calling the DoorDisplayFile method
-  AnsiWriteLn('Displaying sixel file: ' + AFilename);
-  OldLocalWrite := DoorSession.LocalWrite;
-  DoorSession.LocalWrite := false;
-
-  // Display the file
+  DisplayingSixel := True;
   DoorDisplayFile(AFilename);
+  DisplayingSixel := False;
 
-  // Restore LocalWrite flag
-  DoorSession.LocalWrite := OldLocalWrite;
 end;
 
 {
@@ -544,9 +538,18 @@ end;
 function DoorKeyPressed: Boolean;
 begin
   DoorDoEvents;
-  Result := false;
-  if (DoorSession.LocalRead) then Result := Result OR KeyPressed;
-  if Not(DoorLocal) AND NOT(STDIO) then Result := Result OR CommCharAvail;
+  if (STDIO) then 
+  begin
+    Result := KeyPressed;
+  end else
+  begin
+    Result := CommCharAvail;
+    
+    // If we're not on Unix, we also check to see if the sysop pressed a key locally
+    {$IFNDEF UNIX}
+    Result := Result OR KeyPressed;
+    {$ENDIF}
+  end;
 end;
 
 function DoorLiteBar(APageSize: Integer): Boolean;
@@ -637,14 +640,6 @@ begin
 end;
 
 {
-  Returns TRUE if the door is being run in local mode
-}
-function DoorLocal: Boolean;
-begin
-  Result := DoorDropInfo.ComType = 0;
-end;
-
-{
   Returns TRUE if it was able to open an existing connection
   mStartUp calls this, so you should never have to directly
 }
@@ -654,7 +649,7 @@ var
   WC5User: TWC5User;
 {$ENDIF}
 begin
-  if (DoorDropInfo.ComNum = 0) or (DoorDropInfo.ComType = 0) OR (STDIO) then
+  if (STDIO) then
   begin
    DoorOpenComm := true;
   end else
@@ -700,98 +695,126 @@ begin
   repeat
     while Not(DoorKeyPressed) do Sleep(1);
 
-    if (DoorSession.LocalRead AND KeyPressed) then
+    if (STDIO) then
     begin
-      // Check for local keypress
-      Ch := ReadKey;
-      if (Ch = #0) then
+      if KeyPressed then
       begin
+        // Check for local keypress
         Ch := ReadKey;
-        if (Not(Assigned(DoorOnSysopKey)) OR (Not(DoorOnSysopKey(Ch)))) then
+        if (Ch = #0) then
         begin
+          Ch := ReadKey;
+
+          // No check for sysop hotkey in STDIO mode
           DoorLastKey.Extended := True;
-          DoorLastKey.Location := lkLocal;
+          DoorLastKey.Location := lkUser;
+        end else
+        begin
+          DoorLastKey.Extended := False;
+          DoorLastKey.Location := lkUser;
         end;
-      end else
-      begin
-        DoorLastKey.Extended := False;
-        DoorLastKey.Location := lkLocal;
       end;
     end else
-    if Not(DoorLocal) AND NOT(STDIO) AND (CommCharAvail) then
     begin
-      // Check for remote keypress
-      Ch := CommReadChar;
-      if (Ch = #27) then
+      if (CommCharAvail) then
       begin
-        // ESC, could be a special key
-
-        // Wait up to 500ms for a second key
-        for I := 1 to 10 do
+        // Check for remote keypress
+        Ch := CommReadChar;
+        if (Ch = #27) then
         begin
-          if Not(CommCharAvail) then Sleep(50);
-        end;
+          // ESC, could be a special key
 
-        // Read the next key, if we have one
-        if (CommCharAvail) then
-        begin
-          if (CommPeekChar = '[') then
+          // Wait up to 500ms for a second key
+          for I := 1 to 10 do
           begin
-            // That's ESC and [ now, so we'll assume it's a special key
-            CommReadChar; // Eat the [
+            if Not(CommCharAvail) then Sleep(50);
+          end;
 
-            // Wait up to 500ms for a second key
-            for I := 1 to 10 do
+          // Read the next key, if we have one
+          if (CommCharAvail) then
+          begin
+            if (CommPeekChar = '[') then
             begin
-              if Not(CommCharAvail) then Sleep(50);
-            end;
+              // That's ESC and [ now, so we'll assume it's a special key
+              CommReadChar; // Eat the [
 
-            if (CommCharAvail) then
-            begin
-              Ch := CommReadChar;
-              case Ch of
-                'A': begin
-                       Ch := 'H'; // Up arrow
-                       DoorLastKey.Extended := True;
-                       DoorLastKey.Location := lkRemote;
-                     end;
-                'B': begin
-                       Ch := 'P'; // Down arrow
-                       DoorLastKey.Extended := True;
-                       DoorLastKey.Location := lkRemote;
-                     end;
-                'C': begin
-                       Ch := 'M'; // Right arrow
-                       DoorLastKey.Extended := True;
-                       DoorLastKey.Location := lkRemote;
-                     end;
-                'D': begin
-                       Ch := 'K'; // Left arrow
-                       DoorLastKey.Extended := True;
-                       DoorLastKey.Location := lkRemote;
-                     end;
+              // Wait up to 500ms for a second key
+              for I := 1 to 10 do
+              begin
+                if Not(CommCharAvail) then Sleep(50);
+              end;
+
+              if (CommCharAvail) then
+              begin
+                Ch := CommReadChar;
+                case Ch of
+                  'A': begin
+                         Ch := 'H'; // Up arrow
+                         DoorLastKey.Extended := True;
+                         DoorLastKey.Location := lkUser;
+                       end;
+                  'B': begin
+                         Ch := 'P'; // Down arrow
+                         DoorLastKey.Extended := True;
+                         DoorLastKey.Location := lkUser;
+                       end;
+                  'C': begin
+                         Ch := 'M'; // Right arrow
+                         DoorLastKey.Extended := True;
+                         DoorLastKey.Location := lkUser;
+                       end;
+                  'D': begin
+                         Ch := 'K'; // Left arrow
+                         DoorLastKey.Extended := True;
+                         DoorLastKey.Location := lkUser;
+                       end;
+                end;
+              end else
+              begin
+                // ESC and [ with no other key, weird combo to hit manually so we'll ignore it
               end;
             end else
             begin
-              // ESC and [ with no other key, weird combo to hit manually so we'll ignore it
+              // Looks like it was ESC followed by something else
+              DoorLastKey.Extended := False;
+              DoorLastKey.Location := lkUser;
             end;
           end else
           begin
-            // Looks like it was ESC followed by something else
+            // No next key, guess it was just an escape keypress
             DoorLastKey.Extended := False;
-            DoorLastKey.Location := lkRemote;
+            DoorLastKey.Location := lkUser;
           end;
         end else
         begin
-          // No next key, guess it was just an escape keypress
           DoorLastKey.Extended := False;
-          DoorLastKey.Location := lkRemote;
+          DoorLastKey.Location := lkUser;
         end;
-      end else
-      begin
-        DoorLastKey.Extended := False;
-        DoorLastKey.Location := lkRemote;
       end;
+
+      // When not running on Unix, we also check for local keypresses by the SysOp in Comm mode
+      {$IFNDEF UNIX}
+      if (DoorLastKey.Location = lkNone) AND KeyPressed then
+      begin
+        // Check for local keypress
+        Ch := ReadKey;
+        if (Ch = #0) then
+        begin
+          Ch := ReadKey;
+
+          // Check for sysop hotkey
+          if (Not(Assigned(DoorOnSysopKey)) OR (Not(DoorOnSysopKey(Ch)))) then
+          begin
+            DoorLastKey.Extended := True;
+            DoorLastKey.Location := lkSysOp;
+          end;
+        end else
+        begin
+          DoorLastKey.Extended := False;
+          DoorLastKey.Location := lkSysOp;
+        end;
+      end;
+      {$ENDIF}
     end;
   until (DoorLastKey.Location <> lkNone);
 
@@ -835,18 +858,19 @@ procedure DoorStartUp;
 var
    Ch: Char;
    DropFile: String;
-   Socket: LongInt;
+   ForceSTDIO: Boolean;
    I: Integer;
    Local: Boolean;
    Node: Integer;
    S: String;
+   Socket: LongInt;
    Wildcat: Boolean;
 begin
   DropFile := '';
+  ForceSTDIO := False;
   Local := True;
   Node := 0;
-  Socket := -1;
-  STDIO := False;
+  Socket := -99;
   Wildcat := False;
 
   if (ParamCount > 0) then
@@ -875,8 +899,7 @@ begin
                  Wildcat := True;
                end;
           {$ENDIF}
-          'X': STDIO := True;
-          'Z': DoorSession.LocalRead := False;
+          'X': ForceSTDIO := True;
           else if Assigned(DoorOnCLP) then DoorOnCLP(Ch, S);
         end;
       end;
@@ -886,6 +909,7 @@ begin
   if (Local) then
   begin
     DoorDropInfo.Node := Node;
+    STDIO := True;
     if Assigned(DoorOnLocalLogin) then
     begin
       DoorOnLocalLogin;
@@ -896,13 +920,27 @@ begin
   begin
     DoorDropInfo.ComNum := 1;
     DoorDropInfo.ComType := 3;
+    STDIO := False;
   end else
   if (Socket >= 0) and (Node > 0) then
   begin
     DoorDropInfo.ComNum := Socket;
     DoorDropInfo.ComType := 2;
     DoorDropInfo.Node := Node;
+    STDIO := False;
   end else
+  {$IFDEF UNIX}
+  // When I run mystic in local mode, it creates a door32.sys with Comm type=2
+  // and Socket handle = -1, so it seems fair to accept -S-1 as a command-line
+  // argument for requesting STDIO mode
+  if (Socket = -1) and (Node > 0) Then
+  begin
+    DoorDropInfo.ComNum := -1;
+    DoorDropInfo.ComType := 2;
+    DoorDropInfo.Node := Node;
+    STDIO := True;
+  end else
+  {$ENDIF}
   if (DropFile <> '') then
   begin
     if (FileExists(DropFile)) and (AnsiContainsText(DropFile, 'DOOR32.SYS')) then
@@ -930,6 +968,41 @@ begin
       Delay(2500);
       Halt;
     end;
+
+    case DoorDropInfo.ComType of
+      0:
+      begin
+        STDIO := True;
+      end;
+
+      1, 2:
+      begin
+        if (ForceSTDIO) then
+        begin
+          STDIO := True;
+        end else
+        if (DoorDropInfo.ComNum >= 0) then
+        begin
+          STDIO := False;
+        end else
+        {$IFDEF UNIX}
+        if (DoorDropInfo.ComNum = -1) then
+        begin
+          // Mystic on Linux sets the Comm number to -1 when the BBS
+          // was launched in local mode, so we want STDIO mode in that case
+          STDIO := True;
+        end else
+        {$ENDIF}
+        begin
+          ClrScr;
+          WriteLn;
+          WriteLn('  Invalid comm number: ' + IntToStr(DoorDropInfo.ComNum));
+          WriteLn;
+          Delay(2500);
+          Halt;
+        end;
+      end;
+    end;
   end else
   begin
     if Assigned(DoorOnUsage) then DoorOnUsage;
@@ -939,7 +1012,7 @@ begin
   DoorLastKey.Time := Now;
   DoorSession.TimeOn := Now;
 
-  if Not(DoorLocal) then
+  if Not(STDIO) then
   begin
     if Not(DoorOpenComm) then
     begin
@@ -960,7 +1033,9 @@ begin
     DoorSession.EventsTime := 0;
 
     DoorClrScr;
+    {$IFNDEF UNIX}
     Window(1, 1, 80, 24);
+    {$ENDIF}
   end;
 end;
 
@@ -1015,9 +1090,14 @@ var
   BackTick3: String;
   BeforeBackTick: String;
 begin
-  if (Pos('|', AText) > 0) then AText := PipeToAnsi(AText);
+  if (DoorSession.PipeWrite AND (Pos('|', AText) > 0) AND (Length(AText) >= 3) AND NOT(DisplayingSixel)) then
+  begin
+    AText := PipeToAnsi(AText);
+  end;
 
-  if (DoorSession.SethWrite AND (Pos('`', AText) > 0) AND (Length(AText) > 1)) then
+  // TODOY Have a SethToAnsi?  I guess some stuff like MORE and delays would still
+  //       need to be handled here, but it would be a smaller block of code
+  if (DoorSession.SethWrite AND (Pos('`', AText) > 0) AND (Length(AText) >= 2) AND NOT(DisplayingSixel)) then
   begin
     while (Length(AText) > 0) do
     begin
@@ -1118,8 +1198,20 @@ begin
     end;
   end else
   begin
-    if (DoorSession.LocalWrite) then AnsiWrite(AText);
-    if Not(DoorLocal) AND NOT(STDIO) then CommWrite(AText);
+    if (STDIO) then
+    begin
+      {$IFDEF UNIX}
+      Write(AText);
+      {$ELSE}
+      AnsiWrite(AText);
+      {$ENDIF}
+    end else
+    begin
+      CommWrite(AText);
+      {$IFNDEF UNIX}
+      if NOT(DisplayingSixel) then AnsiWrite(AText);
+      {$ENDIF}
+    end;
   end;
 end;
 
@@ -1128,6 +1220,7 @@ end;
 }
 procedure DoorWriteCentered(AText: String);
 begin
+  // TODOY Writing a string with pipe codes won't be centered properly
   if (DoorSession.SethWrite) then
   begin
     DoorGotoX((80 - Length(SethStrip(AText))) div 2);
@@ -1166,7 +1259,7 @@ begin
      DoorCursorDown(255);
      DoorCursorLeft(255);
 
-     if Not(DoorLocal) AND NOT(STDIO) then DoorClose(false);
+     if NOT(STDIO) then DoorClose(false);
 end;
 
 begin
@@ -1222,11 +1315,12 @@ begin
        DoIdleCheck := True;
        Events := False;
        EventsTime := 0;
-       LocalRead := true;
-       LocalWrite := true;
        MaxIdle := 300;
+       PipeWrite := True;
        SethWrite := false;
        TimeOn := 0;
   end;
+
+  STDIO := True;
 end.
 

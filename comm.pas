@@ -167,7 +167,7 @@ end;
 procedure CommSetBaud(ABaud: LongInt);
 begin
   {$IFDEF COMM_FOSSIL}
-    WriteLn('REEPORT Comm CommSetBaud'); Halt;
+    WriteLn('REPORT Comm CommSetBaud'); Halt;
   {$ENDIF}
 end;
 

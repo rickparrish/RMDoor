@@ -683,8 +683,10 @@ begin
   Ch := #0;
   DoorLastKey.Location := lkNone;
   repeat
+    Writeln('Entering DoorReadKey');
     while Not(DoorKeyPressed) do Sleep(1);
 
+    Writeln('DoorReadKey: Key Pressed True');
     if (KeyPressed) then
     begin
       // Check for local keypress

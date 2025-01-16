@@ -249,7 +249,6 @@ begin
   WriteLn(' Optional parameters');
   //TODO WriteLn('  -W         WINSERVER DOOR32 MODE');
   WriteLn('  -X         DISABLE COMM ROUTINES (STDIO MODE)');
-  WriteLn('  -Z         DISABLE LOCAL INPUT');
   WriteLn;
   Halt;
 end;
@@ -1201,7 +1200,7 @@ begin
     if (STDIO) then
     begin
       {$IFDEF UNIX}
-      Write(AText);
+      Write(StdOut, AText);
       {$ELSE}
       AnsiWrite(AText);
       {$ENDIF}

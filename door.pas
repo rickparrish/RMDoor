@@ -454,32 +454,33 @@ var
    Ch: Char;
    S: String;
    SavedAttr: Byte;
-   XPos: Byte;
+   XOffset: Byte;
 
   procedure UpdateText;
   begin
-    DoorGotoX(XPos);
-    if (Length(S) > AVisibleLength) then
+    if (XOffset > 0) then DoorWrite(AnsiCursorLeft(XOffset));
+    if (Length(S) >= AVisibleLength) then
     begin
       if (APasswordCharacter = #0) then
       begin
-       DoorWrite(Copy(S, Length(S) - AVisibleLength + 1, AVisibleLength))
+        DoorWrite(Copy(S, Length(S) - AVisibleLength + 1, AVisibleLength))
       end else
       begin
         DoorWrite(AddCharR(APasswordCharacter, '', AVisibleLength));
       end;
-      DoorGotoX(XPos + AVisibleLength);
+      XOffset := AVisibleLength;
     end else
     begin
       if (APasswordCharacter = #0) then
       begin
-       DoorWrite(S)
+        DoorWrite(S)
       end else
       begin
         DoorWrite(AddCharR(APasswordCharacter, '', Length(S)));
       end;
       DoorWrite(PadRight('', AVisibleLength - Length(S)));
-      DoorGotoX(XPos + Length(S));
+      DoorWrite(AnsiCursorLeft(AVisibleLength - Length(S)));
+      XOffset := Length(S);
     end;
   end;
 
@@ -489,7 +490,7 @@ begin
 
   SavedAttr := TextAttr;
   DoorTextAttr(AAttr);
-  XPos := WhereX;
+  XOffset := 0;
 
   UpdateText;
 
@@ -497,28 +498,36 @@ begin
     Ch := DoorReadKey;
     if (Ch = #8) and (Length(S) > 0) then
     begin
-     Delete(S, Length(S), 1);
-     DoorWrite(#8 + ' ' + #8);
-     if (Length(S) >= AVisibleLength) then UpdateText;
+      Delete(S, Length(S), 1);
+      if (Length(S) >= AVisibleLength) then
+      begin
+        UpdateText;
+      end else
+      begin
+        DoorWrite(#8 + ' ' + #8);
+        XOffset -= 1;
+      end;
     end else
     if (Ch = #25) and (S <> '') then {CTRL-Y}
     begin
-     S := '';
-     UpdateText;
+      S := '';
+      UpdateText;
     end else
     if (Pos(Ch, AAllowedCharacters) > 0) and (Length(S) < AMaxLength) then
     begin
       S := S + Ch;
       if (Length(S) > AVisibleLength) then
       begin
-         UpdateText
+        UpdateText;
       end else
       if (APasswordCharacter = #0) then
       begin
-         DoorWrite(Ch)
+        DoorWrite(Ch);
+        XOffset += 1;
       end else
       begin
-          DoorWrite(APasswordCharacter);
+        DoorWrite(APasswordCharacter);
+        XOffset += 1;
       end;
     end;
   until (Ch = #27) or (Ch = #13);

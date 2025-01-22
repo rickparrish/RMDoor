@@ -20,7 +20,7 @@ begin
 
       DoorWriteLn();
       DoorWrite('Input Test: ');
-      S := DoorInput('Type something here', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 40, 40, 31);
+      S := DoorInput('Type something here', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 20, 40, 31);
       DoorWriteLn('You typed: ' + S);
 
       DoorWriteLn();

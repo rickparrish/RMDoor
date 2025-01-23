@@ -3,10 +3,11 @@ program Test;
 {$mode objfpc}{$h+}
 
 uses
-  Door, SysUtils;
+  Crt, Door, SysUtils;
 
 var
   Ch: Char;
+  I: Integer;
   S: String;
 
 begin
@@ -22,8 +23,27 @@ begin
       DoorWrite('Input Test: ');
       S := DoorInput('Type something here', DOOR_INPUT_CHARS_ALPHA + ' ', #0, 20, 40, 31);
       DoorWriteLn('You typed: ' + S);
-
       DoorWriteLn();
+
+      DoorWriteLn('WindMaxX=' + IntToStr(WindMaxX) + ', WindMaxY=' + IntToStr(WindMaxY));
+      DoorWriteLn();
+
+      DoorWriteLn('Testing 8 background colours:');
+      for I := 0 to 7 do
+      begin
+        DoorTextBackground(I);
+        if (I = 0) then
+        begin
+          DoorTextColour(15);
+        end else
+        begin
+          DoorTextColour(0);
+        end;
+        DoorWriteLn('Test Background #' + IntToStr(I));
+      end;
+      DoorTextAttr(7);
+      DoorWriteLn();
+
       DoorWriteLn('Hit Q to Quit');
       repeat
         Ch := DoorReadKey();

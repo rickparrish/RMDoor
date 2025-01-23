@@ -1062,6 +1062,7 @@ end;
 }
 procedure DoorTextAttr(AAttr: Byte);
 begin
+  {$IFDEF UNIX}SetTextAttr(AAttr);{$ENDIF}
   DoorWrite(AnsiTextAttr(AAttr));
 end;
 
@@ -1070,6 +1071,7 @@ end;
 }
 procedure DoorTextBackground(AColour: Byte);
 begin
+  {$IFDEF UNIX}SetTextBackground(AColour);{$ENDIF}
   DoorWrite(AnsiTextBackground(AColour));
 end;
 
@@ -1078,6 +1080,7 @@ end;
 }
 procedure DoorTextColour(AColour: Byte);
 begin
+  {$IFDEF UNIX}SetTextColour(AColour);{$ENDIF}
   DoorWrite(AnsiTextColour(AColour));
 end;
 
@@ -1086,6 +1089,7 @@ end;
 }
 procedure DoorTextColourAndBlink(AColour: Byte; ABlink: Boolean);
 begin
+  {$IFDEF UNIX}SetTextColour(AColour);{$ENDIF}
   DoorWrite(AnsiTextColour(AColour));
   DoorWrite(AnsiBlink(ABlink));
 end;

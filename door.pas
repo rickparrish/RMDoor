@@ -5,7 +5,7 @@ unit Door;
 interface
 
 uses
-  Ansi, Comm, DropFiles, StringUtils, VideoUtils,
+  Ansi, Comm, Crt2, DropFiles, StringUtils, VideoUtils,
   Classes, Crt, DateUtils, StrUtils, SysUtils;
 
 const
@@ -153,7 +153,8 @@ procedure NewExitProc; forward;
 }
 procedure DefaultOnHangup;
 begin
-  TextAttr := 15;
+  // Lost carrier, so no need to use Door* methods
+  SetTextAttr(15);
   ClrScr;
   WriteLn;
   WriteLn('   Caller Dropped Carrier.  Returning To BBS...');
@@ -488,7 +489,7 @@ begin
   if (Length(ADefaultText) > AMaxLength) then ADefaultText := Copy(ADefaultText, 1, AMaxLength);
   S := ADefaultText;
 
-  SavedAttr := TextAttr;
+  SavedAttr := GetTextAttr;
   DoorTextAttr(AAttr);
   XOffset := 0;
 
@@ -1061,6 +1062,7 @@ end;
 }
 procedure DoorTextAttr(AAttr: Byte);
 begin
+  {$IFDEF UNIX}SetTextAttr(AAttr);{$ENDIF}
   DoorWrite(AnsiTextAttr(AAttr));
 end;
 
@@ -1069,6 +1071,7 @@ end;
 }
 procedure DoorTextBackground(AColour: Byte);
 begin
+  {$IFDEF UNIX}SetTextBackground(AColour);{$ENDIF}
   DoorWrite(AnsiTextBackground(AColour));
 end;
 
@@ -1077,6 +1080,7 @@ end;
 }
 procedure DoorTextColour(AColour: Byte);
 begin
+  {$IFDEF UNIX}SetTextColour(AColour);{$ENDIF}
   DoorWrite(AnsiTextColour(AColour));
 end;
 
@@ -1085,6 +1089,7 @@ end;
 }
 procedure DoorTextColourAndBlink(AColour: Byte; ABlink: Boolean);
 begin
+  {$IFDEF UNIX}SetTextColour(AColour);{$ENDIF}
   DoorWrite(AnsiTextColour(AColour));
   DoorWrite(AnsiBlink(ABlink));
 end;

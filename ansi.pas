@@ -5,6 +5,7 @@ unit Ansi;
 interface
 
 uses
+  Crt2,
   Classes, Crt, Math, SysUtils;
 
 const
@@ -56,7 +57,7 @@ begin
     Result := #27 + '[5m';
   end else
   begin
-    Result := #27 + '[0m' + AnsiTextBackground(TextAttr div 16) + AnsiTextColour(TextAttr mod 16);
+    Result := #27 + '[0m' + AnsiTextBackground(GetTextAttr div 16) + AnsiTextColour(GetTextAttr mod 16);
   end;
 end;
 
@@ -132,7 +133,7 @@ function AnsiTextColour(AColour: Byte): String;
 begin
   while (AColour > 15) do AColour -= 16;
   case AColour of
-     0..7: Result := #27 + '[0;' + IntToStr(30 + AnsiColours[AColour]) + 'm' + AnsiTextBackground(TextAttr div 16);
+     0..7: Result := #27 + '[0;' + IntToStr(30 + AnsiColours[AColour]) + 'm' + AnsiTextBackground(GetTextAttr div 16);
     8..15: Result := #27 + '[1;' + IntToStr(30 + AnsiColours[AColour - 8]) + 'm';
   end;
 end;
@@ -300,25 +301,25 @@ begin
                2: ; // Intensity: Faint (not widely supported)
                3: ; // Italic: on (not widely supported)
                4: ; // Underline: Single
-               5: TextAttr := TextAttr OR Blink; // Blink: Slow (< 150 per minute)
-               6: TextAttr := TextAttr OR Blink; // Blink: Rapid (>= 150 per minute)
-               7: TextAttr := ((TextAttr AND $70) SHR 4) + ((TextAttr AND $07) SHL 4); // Image: Negative (swap foreground and background)
+               5: SetTextAttr(GetTextAttr OR Blink); // Blink: Slow (< 150 per minute)
+               6: SetTextAttr(GetTextAttr OR Blink); // Blink: Rapid (>= 150 per minute)
+               7: SetTextAttr(((GetTextAttr AND $70) SHR 4) + ((GetTextAttr AND $07) SHL 4)); // Image: Negative (swap foreground and background)
                8: begin // Conceal (not widely supported)
-                    AnsiAttr := TextAttr;
-                    TextAttr := 0;
+                    AnsiAttr := GetTextAttr;
+                    SetTextAttr(0);
                   end;
                21: ; // Underline: Double (not widely supported)
                22: LowVideo; //	Intensity: Normal (not widely supported)
                24: ; // Underline: None
-               25: TextAttr := TextAttr AND NOT(Blink); // Blink: off
-               27: TextAttr := ((TextAttr AND $70) SHR 4) + ((TextAttr AND $07) SHL 4); // Image: Positive (handle the same as negative
-               28: TextAttr := AnsiAttr; // Reveal (conceal off)
+               25: SetTextAttr(GetTextAttr AND NOT(Blink)); // Blink: off
+               27: SetTextAttr(((GetTextAttr AND $70) SHR 4) + ((GetTextAttr AND $07) SHL 4)); // Image: Positive (handle the same as negative)
+               28: SetTextAttr(AnsiAttr); // Reveal (conceal off)
                30..37: begin // Set foreground color, normal intensity
                          Colour := AnsiColours[AnsiParams[I] - 30];
-                         if (TextAttr mod 16 > 7) then Inc(Colour, 8);
-                         TextColor(Colour);
+                         if (GetTextAttr mod 16 > 7) then Inc(Colour, 8);
+                         SetTextColour(Colour);
                        end;
-               40..47: TextBackground(AnsiColours[AnsiParams[I] - 40]); // Set background color, normal intensity
+               40..47: SetTextBackground(AnsiColours[AnsiParams[I] - 40]); // Set background color, normal intensity
              end;
            end;
          end;

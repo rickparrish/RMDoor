@@ -5,6 +5,7 @@ unit VideoUtils;
 interface
 
 uses
+  Crt2,
   Crt {$IFDEF WINDOWS}, Windows{$ENDIF};
 
 type
@@ -91,7 +92,7 @@ begin
 
   // Save
   NeedWindow := ((WindMinX > 1) OR (WindMinY > 1) OR (WindMaxX < 80) OR (WindmaxY < 25));
-  SavedAttr := TextAttr;
+  SavedAttr := GetTextAttr;
   SavedWindMinX := WindMinX;
   SavedWindMinY := WindMinY;
   SavedWindMaxX := WindMaxX;
@@ -101,7 +102,7 @@ begin
   // Update
   if (NeedWindow) then Window(1, 1, 80, 25);
   GotoXY(AX, AY);
-  TextAttr := AAttr;
+  SetTextAttr(AAttr);
 
   // Trim to fit within 79 columns if on line 25
   if ((AY = 25) AND (Length(ALine) > (79 - AX + 1))) then ALine := Copy(ALine, 1, 79 - AX + 1);
@@ -110,7 +111,7 @@ begin
   Write(ALine);
 
   // Restore
-  TextAttr := SavedAttr;
+  SetTextAttr(SavedAttr);
   if (NeedWindow) then Window(SavedWindMinX, SavedWindMinY, SavedWindMaxX, SavedWindMaxY);
   GotoXY(SavedXY AND $00FF, (SavedXY AND $FF00) SHR 8);
 end;
@@ -444,7 +445,7 @@ begin
 
   // Save
   NeedWindow := ((WindMinX > 1) OR (WindMinY > 1) OR (WindMaxX < 80) OR (WindmaxY < 25));
-  SavedAttr := TextAttr;
+  SavedAttr := GetTextAttr;
   SavedWindMinX := WindMinX;
   SavedWindMinY := WindMinY;
   SavedWindMaxX := WindMaxX;
@@ -454,13 +455,13 @@ begin
   // Update
   if (NeedWindow) then Window(1, 1, 80, 25);
   GotoXY(AX, AY);
-  TextAttr := AAttr;
+  SetTextAttr(AAttr);
 
   // Output
   Write(GetCharAt(AX, AY));
 
   // Restore
-  TextAttr := SavedAttr;
+  SetTextAttr(SavedAttr);
   if (NeedWindow) then Window(SavedWindMinX, SavedWindMinY, SavedWindMaxX, SavedWindMaxY);
   GotoXY(SavedXY AND $00FF, (SavedXY AND $FF00) SHR 8);
 end;
@@ -509,7 +510,7 @@ begin
 
   // Save
   NeedWindow := ((WindMinX > 1) OR (WindMinY > 1) OR (WindMaxX < 80) OR (WindmaxY < 25));
-  SavedAttr := TextAttr;
+  SavedAttr := GetTextAttr;
   SavedWindMinX := WindMinX;
   SavedWindMinY := WindMinY;
   SavedWindMaxX := WindMaxX;
@@ -519,13 +520,13 @@ begin
   // Update
   if (NeedWindow) then Window(1, 1, 80, 25);
   GotoXY(AX, AY);
-  TextAttr := GetAttrAt(AX, AY);
+  SetTextAttr(GetAttrAt(AX, AY));
 
   // Output
   Write(ACh);
 
   // Restore
-  TextAttr := SavedAttr;
+  SetTextAttr(SavedAttr);
   if (NeedWindow) then Window(SavedWindMinX, SavedWindMinY, SavedWindMaxX, SavedWindMaxY);
   GotoXY(SavedXY AND $00FF, (SavedXY AND $FF00) SHR 8);
 end;

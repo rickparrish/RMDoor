@@ -16,6 +16,13 @@ begin
       DoorStartUp();
 
       DoorClrScr();
+
+      DoorWriteLn('DropInfo.Alias = ' + DoorDropInfo.Alias);
+      DoorWriteLn('DropInfo.RealName = ' + DoorDropInfo.RealName);
+      DoorWriteLn('DropInfo.AliasOrRealName = ' + DoorDropInfo.AliasOrRealName);
+      DoorWriteLn('DropInfo.RealNameOrAlias = ' + DoorDropInfo.RealNameOrAlias);
+      DoorWriteLn;
+
       DoorWriteLn('This is written with DoorWriteLn()');
       WriteLn('This is written with WriteLn()');
 

@@ -30,19 +30,21 @@ type
     E = Supported By WINServer
   }
   TDoorDropInfo = Record
-    Access    : LongInt;            {ABC--} {User's Access Level}
-    Alias     : String;             {ABCDE} {User's Alias/Handle}
-    Baud      : LongInt;            {ABCDE} {Connection Baud Rate}
-    Clean     : Boolean;            {---D-} {Is LORD In Clean Mode?}
-    ComNum    : LongInt;            {ABCD-} {Comm/Socket Number}
-    ComType   : Byte;               {A----} {Comm Type (0=Local, 1=Serial, 2=Socket, 3=WC5}
-    Emulation : TDoorEmulationType; {ABCDE} {User's Emulation (etANSI or etASCII)}
-    Fairy     : Boolean;            {---D-} {Does LORD User Have Fairy?}
-    MaxSeconds: LongInt;            {ABCDE} {User's Time Left At Start (In Seconds)}
-    Node      : LongInt;            {A-C-E} {Node Number}
-    RealName  : String;             {ABCDE} {User's Real Name}
-    RecPos    : LongInt;            {A-CD-} {User's Userfile Record Position (Always 0 Based)}
-    Registered: Boolean;            {---D-} {Is LORD Registered?}
+    Access         : LongInt;            {ABC--} {User's Access Level}
+    Alias          : String;             {ABCDE} {User's Alias/Handle}
+    AliasOrRealName: String;             {ABCDE} {User's Alias, or Real Name if Alias is blank}
+    Baud           : LongInt;            {ABCDE} {Connection Baud Rate}
+    Clean          : Boolean;            {---D-} {Is LORD In Clean Mode?}
+    ComNum         : LongInt;            {ABCD-} {Comm/Socket Number}
+    ComType        : Byte;               {A----} {Comm Type (0=Local, 1=Serial, 2=Socket, 3=WC5}
+    Emulation      : TDoorEmulationType; {ABCDE} {User's Emulation (etANSI or etASCII)}
+    Fairy          : Boolean;            {---D-} {Does LORD User Have Fairy?}
+    MaxSeconds     : LongInt;            {ABCDE} {User's Time Left At Start (In Seconds)}
+    Node           : LongInt;            {A-C-E} {Node Number}
+    RealName       : String;             {ABCDE} {User's Real Name}
+    RealNameOrAlias: String;             {ABCDE} {User's Real Name, or Alias if Real Name is blank}
+    RecPos         : LongInt;            {A-CD-} {User's Userfile Record Position (Always 0 Based)}
+    Registered     : Boolean;            {---D-} {Is LORD Registered?}
   end;
 
   TDoorLastKeyType = (lkNone, lkSysOp, lkUser);
@@ -1020,6 +1022,19 @@ begin
 
   DoorLastKey.Time := Now;
   DoorSession.TimeOn := Now;
+
+  {
+    Populate RealNameOrAlias and AliasOrRealName variables, which as the names imply,
+    will be populated with one variable but fallback to another if that first variable
+    is empty.  So for example if you as the programmer prefer working with the alias,
+    but you've found some systems don't output an alias in the dropfile, then you
+    can use DoorDropInfo.AliasOrRealName instead of DoorDropInfo.Alias to automatically
+    fallback to using DoorDropInfo.RealName when necessary
+  }
+  DoorDropInfo.RealNameOrAlias := DoorDropInfo.RealName;
+  if (DoorDropInfo.RealNameOrAlias = '') then DoorDropInfo.RealNameOrAlias := DoorDropInfo.Alias;
+  DoorDropInfo.AliasOrRealName := DoorDropInfo.Alias;
+  if (DoorDropInfo.AliasOrRealName = '') then DoorDropInfo.AliasOrRealName := DoorDropInfo.RealName;
 
   if Not(STDIO) then
   begin
